@@ -1,0 +1,29 @@
+{
+  "name": "YAFN Banana Edition",
+  
+  "tree": {
+    "$className": "DataModel",
+
+    "ReplicatedStorage": {
+
+      "Modules": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true,
+
+        "$path": "src/modules"
+      }
+      
+    },
+
+    "StarterGui": {
+      
+      "$className": "StarterGui",
+      
+      "GameUI": {
+        "$className": "ScreenGui",
+        "$ignoreUnknownInstances": true,
+        "$path": "src/shared"
+      }
+    }
+  }
+}
