@@ -1,2 +1,2 @@
-# YAFN-Banana-GitHub
- Yet Another Funkin' Night but better
+# YAFN-Banana-Edition
+ A heavily modified version of Yet Another Funkin' Night.
