@@ -5,7 +5,7 @@ local Sprite = require(script.Parent.Sprite)
 local Conductor = require(script.Parent.Conductor)
 Character.__index=Character
 
-function Character.new(char,cf,isPlayer,animTable,animName,MicrophoneName)	
+function Character.new(char,cf,isPlayer,animTable,animName,MicrophoneName, speedModifier)	
 	if(char=='bf-christmas')then char='bf'end
 	if(char=='bf-car')then char='bf'end
 	if(char=='mom-car')then char='mom'end
@@ -40,19 +40,19 @@ function Character.new(char,cf,isPlayer,animTable,animName,MicrophoneName)
 	setmetatable(charObj,Character)
 	if(animTable.DanceLeft and animTable.DanceRight)then
 		charObj.BeatDancer=true;
-		charObj:AddAnimation("danceLeft",animTable["DanceLeft"],1,true,Enum.AnimationPriority.Idle)
-		charObj:AddAnimation("danceRight",animTable["DanceRight"],1,true,Enum.AnimationPriority.Idle)
+		charObj:AddAnimation("danceLeft",animTable["DanceLeft"],speedModifier,true,Enum.AnimationPriority.Idle)
+		charObj:AddAnimation("danceRight",animTable["DanceRight"],speedModifier,true,Enum.AnimationPriority.Idle)
 	else
-		charObj:AddAnimation("idle",animTable["Idle"],1,true,Enum.AnimationPriority.Idle)
+		charObj:AddAnimation("idle",animTable["Idle"],speedModifier,true,Enum.AnimationPriority.Idle)
 	end
-	charObj:AddAnimation("singDOWN",animTable["SingDown"],1,false,Enum.AnimationPriority.Movement)
-	charObj:AddAnimation("singLEFT",animTable["SingLeft"],1,false,Enum.AnimationPriority.Movement)
-	charObj:AddAnimation("singRIGHT",animTable["SingRight"],1,false,Enum.AnimationPriority.Movement)
-	charObj:AddAnimation("singUP",animTable["SingUp"],1,false,Enum.AnimationPriority.Movement)
+	charObj:AddAnimation("singDOWN",animTable["SingDown"],speedModifier,false,Enum.AnimationPriority.Movement)
+	charObj:AddAnimation("singLEFT",animTable["SingLeft"],speedModifier,false,Enum.AnimationPriority.Movement)
+	charObj:AddAnimation("singRIGHT",animTable["SingRight"],speedModifier,false,Enum.AnimationPriority.Movement)
+	charObj:AddAnimation("singUP",animTable["SingUp"],speedModifier,false,Enum.AnimationPriority.Movement)
 	for name,id in next, animTable do
 		if((typeof(id)=='string' or typeof(id)=='number') and not charObj:AnimLoaded(id))then
 			print(name,id)
-			charObj:AddAnimation(string.lower(name),id,1,false,Enum.AnimationPriority.Movement)
+			charObj:AddAnimation(string.lower(name),id,speedModifier,false,Enum.AnimationPriority.Movement)
 		end
 	end
 	obj:SetPrimaryPartCFrame(cf * animTable.Offset)

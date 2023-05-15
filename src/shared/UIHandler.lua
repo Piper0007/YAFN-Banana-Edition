@@ -1277,6 +1277,9 @@ local categoryOrder = {
 	"All";
 	"Gameplay";
 	"User Interface";
+	"Ratings";
+	"Notes";
+	"Preloading";
 	"Miscellaneous";
 	"Experimental";
 }

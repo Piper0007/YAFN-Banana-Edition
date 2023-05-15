@@ -922,15 +922,15 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 		end
 		-- module.PositioningParts.isPlayer:list this lists players in spot 1, 2, 3, and 4
 		if flipMode then -- Character.new(char:string,CFrame: a, isPlayer:bool, Animations, AnimationName: g, Microphone: string)
-			PlayerObjects.BF = Character.new(BFChar,module.PositioningParts.Left.CFrame * BFOffset,module.PositioningParts.isPlayer[1],BFAnimations,BFAnim.Name,BFAnimations.Microphone) -- Opponent character as BF
+			PlayerObjects.BF = Character.new(BFChar,module.PositioningParts.Left.CFrame * BFOffset,module.PositioningParts.isPlayer[1],BFAnimations,BFAnim.Name,BFAnimations.Microphone, speedModifier) -- Opponent character as BF
 
 			if not module.PositioningParts.isPlayer[1] then PlayerObjects.BF.Obj.Parent=workspace end -- checks if there is a player in spot 1 and if not place a placeholder character in the game
-			PlayerObjects.Dad = Character.new(DadChar,module.PositioningParts.Right.CFrame,module.PositioningParts.isPlayer[2],DadAnimations,DadAnim.Name,DadAnimations.Microphone) -- Player character as Dad
+			PlayerObjects.Dad = Character.new(DadChar,module.PositioningParts.Right.CFrame,module.PositioningParts.isPlayer[2],DadAnimations,DadAnim.Name,DadAnimations.Microphone, speedModifier) -- Player character as Dad
 			if not module.PositioningParts.isPlayer[2] then PlayerObjects.Dad.Obj.Parent=workspace end
 		else--if not flipMode then
-			PlayerObjects.Dad = Character.new(DadChar,module.PositioningParts.Right.CFrame,module.PositioningParts.isPlayer[2],DadAnimations,DadAnim.Name,DadAnimations.Microphone) -- Opponent character as Dad
+			PlayerObjects.Dad = Character.new(DadChar,module.PositioningParts.Right.CFrame,module.PositioningParts.isPlayer[2],DadAnimations,DadAnim.Name,DadAnimations.Microphone, speedModifier) -- Opponent character as Dad
 			if not module.PositioningParts.isPlayer[2] then PlayerObjects.Dad.Obj.Parent=workspace end -- checks if there is a player in spot 2
-			PlayerObjects.BF = Character.new(BFChar,module.PositioningParts.Left.CFrame * BFOffset,module.PositioningParts.isPlayer[1],BFAnimations,BFAnim.Name,BFAnimations.Microphone) -- Player character as BF
+			PlayerObjects.BF = Character.new(BFChar,module.PositioningParts.Left.CFrame * BFOffset,module.PositioningParts.isPlayer[1],BFAnimations,BFAnim.Name,BFAnimations.Microphone, speedModifier) -- Player character as BF
 			if not module.PositioningParts.isPlayer[1] then PlayerObjects.BF.Obj.Parent=workspace end 
 		end	
 
@@ -961,7 +961,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 					Dad2Animations[AnimObj.Name] = string.sub(AnimObj.AnimationId,14)
 				end
 			end
-			PlayerObjects.Dad2 = Character.new(Dad2Char,module.PositioningParts.Right.CFrame * CFrame.new(3,0,3),module.PositioningParts.isPlayer[4],Dad2Animations,SongIdInfo.Dad2Animations,Dad2Animations.Microphone)
+			PlayerObjects.Dad2 = Character.new(Dad2Char,module.PositioningParts.Right.CFrame * CFrame.new(3,0,3),module.PositioningParts.isPlayer[4],Dad2Animations,SongIdInfo.Dad2Animations,Dad2Animations.Microphone, speedModifier)
 			PlayerObjects.Dad2:flipDir()
 			if not module.PositioningParts.isPlayer[4] then PlayerObjects.Dad2.Obj.Parent = workspace end
 		end
@@ -991,7 +991,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 					BF2Animations[AnimObj.Name] = string.sub(AnimObj.AnimationId,14)
 				end
 			end
-			PlayerObjects.BF2 = Character.new(BF2Char,module.PositioningParts.Left.CFrame * CFrame.new(1.75,0,-2),module.PositioningParts.isPlayer[3],BF2Animations,SongIdInfo.BF2Animations,BF2Animations.Microphone)
+			PlayerObjects.BF2 = Character.new(BF2Char,module.PositioningParts.Left.CFrame * CFrame.new(1.75,0,-2),module.PositioningParts.isPlayer[3],BF2Animations,SongIdInfo.BF2Animations,BF2Animations.Microphone, speedModifier)
 			if not module.PositioningParts.isPlayer[3] then PlayerObjects.BF2.Obj.Parent = workspace end
 		end	
 	end
@@ -1106,6 +1106,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			noteGroup=noteGroup;
 			initialSpeed=initialSpeed;
 			mapProps=mapProps;
+			playbackRate=speedModifier;
 		}
 		for i = 1, #modcharts do
 			table.insert(loadedModchartData, require(modcharts[i]));
@@ -1381,9 +1382,9 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 				value1 = tonumber(value1)
 			end
 			
-			local duration = tonumber(value1) or 0
+			local duration = tonumber(value1)/speedModifier or 0
 			local intensity = tonumber(value2)*1000 or 0
-			local dur2 = tonumber(split2[1]) or 0
+			local dur2 = tonumber(split2[1])/speedModifier or 0
 			local inten2 = camSizeX*tonumber(split2[2]) or 0
 			
 			if duration > 0 and intensity ~= 0 then
@@ -1451,7 +1452,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 					ScrollSpeedThread = task.spawn(function()
 						local loops = 0
 						while loops < 100 and elapsed < duration and not songEnded do
-							songSpeedTween = numLerp(songSpeedTween, newSpeed, elapsed / duration)
+							songSpeedTween = numLerp(songSpeedTween, newSpeed, elapsed / (duration/speedModifier))
 							initialSpeed = (songData.speed * .45 * songSpeedTween)
 							for i = 1, #unspawnedNotes do
 								unspawnedNotes[i].InitialPos = getPosFromTime(unspawnedNotes[i].StrumTime)
@@ -1715,21 +1716,21 @@ function module.changeAnimation(name,player,speed,looped,force)
 		
 		if(animTable.DanceLeft and animTable.DanceRight)then
 			player.BeatDancer=true;
-			player:AddAnimation("danceLeft",animTable["DanceLeft"],1,true,Enum.AnimationPriority.Idle)
-			player:AddAnimation("danceRight",animTable["DanceRight"],1,true,Enum.AnimationPriority.Idle)
+			player:AddAnimation("danceLeft",animTable["DanceLeft"],speedModifier,true,Enum.AnimationPriority.Idle)
+			player:AddAnimation("danceRight",animTable["DanceRight"],speedModifier,true,Enum.AnimationPriority.Idle)
 		else
-			player:AddAnimation("idle",animTable["Idle"],1,true,Enum.AnimationPriority.Idle)
+			player:AddAnimation("idle",animTable["Idle"],speedModifier,true,Enum.AnimationPriority.Idle)
 		end
 		
-		player:AddAnimation("singDOWN",animTable["SingDown"],1,false,Enum.AnimationPriority.Movement)
-		player:AddAnimation("singLEFT",animTable["SingLeft"],1,false,Enum.AnimationPriority.Movement)
-		player:AddAnimation("singRIGHT",animTable["SingRight"],1,false,Enum.AnimationPriority.Movement)
-		player:AddAnimation("singUP",animTable["SingUp"],1,false,Enum.AnimationPriority.Movement)
+		player:AddAnimation("singDOWN",animTable["SingDown"],speedModifier,false,Enum.AnimationPriority.Movement)
+		player:AddAnimation("singLEFT",animTable["SingLeft"],speedModifier,false,Enum.AnimationPriority.Movement)
+		player:AddAnimation("singRIGHT",animTable["SingRight"],speedModifier,false,Enum.AnimationPriority.Movement)
+		player:AddAnimation("singUP",animTable["SingUp"],speedModifier,false,Enum.AnimationPriority.Movement)
 
 		for name,id in next, animTable do
 			if((typeof(id)=='string' or typeof(id)=='number') and not player:AnimLoaded(id))then
 				print("animation: " .. name)
-				player:AddAnimation(name:lower(),id,1,false,Enum.AnimationPriority.Movement)
+				player:AddAnimation(name:lower(),id,speedModifier,false,Enum.AnimationPriority.Movement)
 			end
 		end
 		
@@ -2016,7 +2017,7 @@ end
 
 
 function module.startCountdown(customIcon)
-	TS:Create(cam, TweenInfo.new(2.5,Enum.EasingStyle.Quad,Enum.EasingDirection.InOut),{FieldOfView = 70-(defaultCamZoom*25)}):Play()
+	TS:Create(cam, TweenInfo.new(2.5/speedModifier,Enum.EasingStyle.Quad,Enum.EasingDirection.InOut),{FieldOfView = 70-(defaultCamZoom*25)}):Play()
 	
 	if SongIdInfo.mapProps and repS.Maps:FindFirstChild(SongIdInfo.mapProps) then
 		mapProps.Parent = workspace.Maps
@@ -2187,7 +2188,7 @@ function module.startCountdown(customIcon)
 		IntroSounds[4].SoundId = "rbxassetid://6532961544";
 	end
 	for i = 1,4 do
-		delay((Conductor.crochet/1000)*i,function()
+		delay(((Conductor.crochet/1000)*i)/speedModifier,function()
 
 			IntroSounds[i]:Play()
 			if(countdownImages[i]~=0)then
@@ -2209,7 +2210,7 @@ function module.startCountdown(customIcon)
 				local tw = game:service'TweenService':Create(
 					img,
 					TweenInfo.new(
-						(Conductor.crochet/1000),
+						(Conductor.crochet/1000)/speedModifier,
 						Enum.EasingStyle.Cubic,
 						Enum.EasingDirection.InOut,
 						0,
@@ -2754,16 +2755,16 @@ function ScorePopup(noteDiff, note)
 				splash.Scale=Vector2.new(.7,.7) * (internalSettings.autoSize * module.settings.customSize)
 
 				if(id==1)then
-					splash:AddSparrowXML(xml, 'splash 1', "note splash purple " .. animNum, 24 + delayT,false)
+					splash:AddSparrowXML(xml, 'splash 1', "note splash purple " .. animNum, 24 + delayT * speedModifier,false)
 					splash.Direction = "left"
 				elseif(id==2)then
-					splash:AddSparrowXML(xml, 'splash 2', "note splash blue " .. animNum, 24 + delayT,false)
+					splash:AddSparrowXML(xml, 'splash 2', "note splash blue " .. animNum, 24 + delayT * speedModifier,false)
 					splash.Direction = "down"
 				elseif(id==3)then
-					splash:AddSparrowXML(xml, 'splash 3', "note splash green " .. animNum, 24 + delayT,false)
+					splash:AddSparrowXML(xml, 'splash 3', "note splash green " .. animNum, 24 + delayT * speedModifier,false)
 					splash.Direction = "up"
 				elseif(id==4)then
-					splash:AddSparrowXML(xml, 'splash 4', "note splash red " .. animNum, 24 + delayT,false)
+					splash:AddSparrowXML(xml, 'splash 4', "note splash red " .. animNum, 24 + delayT * speedModifier,false)
 					splash.Direction = "right"
 				end
 
@@ -2787,7 +2788,7 @@ function ScorePopup(noteDiff, note)
 				splash:SetPosition(playerStrums[id].X,playerStrums[id].Y)
 				splash:PlayAnimation('splash ' .. id, false)
 				obj2.Name = "Splash " .. id
-				delay((24 + delayT)/60,function()
+				delay(((24 + delayT)/60)/speedModifier,function()
 					obj2:Destroy()
 					splash:Destroy()
 				end)
@@ -2828,7 +2829,7 @@ function ScorePopup(noteDiff, note)
 	ratingText:SetAttribute("Offset",Vector2.new(0,0))
 	table.insert(ratingLabels,ratingText)
 	ratingText.Parent = script.Parent
-	local tw = game:service'TweenService':Create(ratingText,TweenInfo.new(.2,Enum.EasingStyle.Linear,Enum.EasingDirection.Out,0,false,Conductor.crochet*0.0005),{ImageTransparency = 1})--{TextTransparency=1,TextStrokeTransparency=1})
+	local tw = game:service'TweenService':Create(ratingText,TweenInfo.new(.2/speedModifier,Enum.EasingStyle.Linear,Enum.EasingDirection.Out,0,false,Conductor.crochet*0.0005),{ImageTransparency = 1})--{TextTransparency=1,TextStrokeTransparency=1})
 	tw.Completed:connect(function()
 		ratingText:destroy()
 		pcall(game.Destroy,tw)
@@ -2859,7 +2860,7 @@ function ScorePopup(noteDiff, note)
 		comboText:SetAttribute("Offset",Vector2.new((26*i)-90,-60)*screenMul)
 		table.insert(ratingLabels,comboText)
 		comboText.Parent = script.Parent
-		local tw = game:service'TweenService':Create(comboText,TweenInfo.new(.2,Enum.EasingStyle.Linear,Enum.EasingDirection.Out,0,false,Conductor.crochet*0.002),{ImageTransparency=1})
+		local tw = game:service'TweenService':Create(comboText,TweenInfo.new(.2/speedModifier,Enum.EasingStyle.Linear,Enum.EasingDirection.Out,0,false,Conductor.crochet*0.002),{ImageTransparency=1})
 		tw.Completed:connect(function()
 			comboText:destroy()
 			pcall(game.Destroy,tw)
@@ -2894,7 +2895,7 @@ function ScorePopup(noteDiff, note)
 		comboText:SetAttribute("Offset",Vector2.new((26*i)-90,-100)*screenMul)
 		table.insert(ratingLabels,comboText)
 		comboText.Parent = script.Parent
-		local tw = game:service'TweenService':Create(comboText,TweenInfo.new(.2,Enum.EasingStyle.Linear,Enum.EasingDirection.Out,0,false,Conductor.crochet*0.002),{ImageTransparency=1})
+		local tw = game:service'TweenService':Create(comboText,TweenInfo.new(.2/speedModifier,Enum.EasingStyle.Linear,Enum.EasingDirection.Out,0,false,Conductor.crochet*0.002),{ImageTransparency=1})
 		tw.Completed:connect(function()
 			comboText:destroy()
 			pcall(game.Destroy,tw)
@@ -3221,8 +3222,8 @@ function beatHit()
 		return a.Y>b.Y
 	end)
 
-	tweenIconSize(DadIcon,0.9 * (60/Conductor.BPM))
-	tweenIconSize(BFIcon,0.9 * (60/Conductor.BPM))
+	tweenIconSize(DadIcon,0.9 * (60/Conductor.BPM)/speedModifier)
+	tweenIconSize(BFIcon,0.9 * (60/Conductor.BPM)/speedModifier)
 
 	local currentNoteIndex = floor(curStep/16)
 	if(songData.notes[currentNoteIndex])then
@@ -3328,12 +3329,13 @@ function stepHit()
 	local songPos = (Conductor.SongPos/1000)
 	local instrPos,voicePos = instrSound.TimePosition/instrSound.PlaybackSpeed,voiceSound.TimePosition/voiceSound.PlaybackSpeed
 	local offset = (SongIdInfo.Offset or 0) + (module.settings.ChartOffset/1000)
+	
 	if(songData.needsVoices)then
-		if(voicePos+offset>songPos+1 or voicePos+offset<songPos-1)then
+		if(instrPos-(songPos - offset)>(20 * speedModifier) or voicePos-(songPos - offset) > (20 * speedModifier))then
 			resync()
 		end
 	end
-	if(instrPos+offset>songPos+1 or instrPos+offset<songPos-1)then
+	if(instrSound.TimePosition - (songPos-offset)>(20 * speedModifier) or instrPos - (songPos - offset)>(20 * speedModifier))then
 		resync()
 	end
 end
@@ -3678,8 +3680,8 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 
 	if(startingSong)then
 		if(startedCountdown)then
-			Conductor.timePosition+=deltaTime
-			Conductor.songPosition+=(deltaTime*1000)
+			Conductor.timePosition+=deltaTime * speedModifier
+			Conductor.songPosition+=(deltaTime*1000) * speedModifier
 			updatePosVars();
 			if(Conductor.songPosition>=0)then
 				module.startSong()
@@ -3687,8 +3689,8 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 			CheckSpawns()
 		end
 	else
-		Conductor.timePosition+=(deltaTime)
-		Conductor.songPosition+=(deltaTime*1000)
+		Conductor.timePosition+=(deltaTime) * speedModifier
+		Conductor.songPosition+=(deltaTime*1000) * speedModifier
 		updatePosVars();
 		CheckSpawns()
 	end
@@ -3696,7 +3698,7 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 	if startedCountdown then
 		for i = 1, #loadedModchartData do
 			if(loadedModchartData[i] and loadedModchartData[i].Update) and generatedSong then
-				loadedModchartData[i].Update(deltaTime)
+				loadedModchartData[i].Update(deltaTime * speedModifier)
 			end
 		end
 	end
