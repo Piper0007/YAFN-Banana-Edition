@@ -565,7 +565,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	for i,v in next, rates do rates[i]=0 end
 	lastStep,lastBeat,curStep,totalSteps,totalBeats,curBeat=0,0,0,0,0,0;
 	Conductor.Downscroll = module.settings.Downscroll
-	speedModifier = 1.2--songSettings.SpeedModifier
+	speedModifier = songSettings.SpeedModifier
 	camSpeed = speedModifier
 	instrSound.PlaybackSpeed=speedModifier
 	voiceSound.PlaybackSpeed=speedModifier
