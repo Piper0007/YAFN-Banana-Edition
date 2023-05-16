@@ -459,6 +459,7 @@ function playSound(snd,vol)
 			local soundCast = Instance.new("Sound")
 			soundCast.SoundId = id
 			soundCast.Volume = 1
+			soundCast.PlaybackSpeed = speedModifier
 			soundCache[id] = soundCast
 			sound = soundCast
 		end
@@ -564,7 +565,8 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	for i,v in next, rates do rates[i]=0 end
 	lastStep,lastBeat,curStep,totalSteps,totalBeats,curBeat=0,0,0,0,0,0;
 	Conductor.Downscroll = module.settings.Downscroll
-	speedModifier = songSettings.SpeedModifier
+	speedModifier = 1.2--songSettings.SpeedModifier
+	camSpeed = speedModifier
 	instrSound.PlaybackSpeed=speedModifier
 	voiceSound.PlaybackSpeed=speedModifier
 	
@@ -1361,7 +1363,8 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 				if value2 == '' or value2 == nil then
 					value2 = '#FFFFFF'
 				end
-				module.flash(value2,tonumber(value1) or 1,0)
+				local speed = tonumber(value1) or 1
+				module.flash(value2,speed,0)
 			end
 		elseif curEvent == "screen shake" then -- supposed to shake UI as well
 			--print("screen shaked at "..value1.." intensity for "..value2.." seconds") value1 can either be one number or two numbers separated by a comma
@@ -1427,7 +1430,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			end
 			for i =1, #unspawnedNotes do
 				if unspawnedNotes[i].NoteData == lane then
-					unspawnedNotes[i].ScrollMultiplier = speed
+					unspawnedNotes[i].ScrollMultiplier = speed/speedModifier
 				end
 				unspawnedNotes[i].InitialPos = getPosFromTime(unspawnedNotes[i].StrumTime)
 			end
@@ -2432,7 +2435,7 @@ function module.flash(hex,speed,int)
 	frame.BackgroundColor3 = Color3.fromHex(hex)
 	frame.Visible = true
 	local tweenInfo = TweenInfo.new(
-		speed,
+		speed/speedModifier,
 		Enum.EasingStyle.Quad,
 		Enum.EasingDirection.Out
 	)
