@@ -103,6 +103,7 @@ local isCameraOnForcedPos = false
 local splash = nil
 local songLength = 0
 local falseSongLength = -1
+local defaultClockTime = 6.5 -- Change this to change the time of day!!!
 local modcharts = {}
 local eventNotes = {}
 function numLerp(a,b,c)
@@ -501,11 +502,9 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	camControls.BehaviourType = "Separate"
 	camControls.StayOnCenter = false
 	camControls.DisableLerp = false
-	Conductor.SongPos = 0
-	Conductor.CurrentTrackPos = 0
-	Conductor.AdjustedSongPos = 0
-	Conductor.songPosition=0
-	Conductor.timePosition=0
+	
+	resetGroup("Conductor")
+
 	Conductor.elapsed=0
 	Conductor.curSong=songName
 	internalSettings.currentNoteSkinChange = nil
@@ -515,7 +514,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	internalSettings.showOnlyStrums = false
 	internalSettings.notesRotateWithReceptors = false
 	workspace.Camera.FieldOfView = 70
-	game.Lighting.ClockTime = 6.5
+	game.Lighting.ClockTime = defaultClockTime
 	game.Lighting.ColorCorrection.Saturation = 0
 	allReceptors = {}
 	dadStrums = {}
@@ -664,9 +663,11 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			NoteXml = NoteXml.Value
 		end
 	end
+	
 	if module.settings.noteSplashes then
 		game:GetService('ContentProvider'):PreloadAsync({'rbxassetid://11638311146'})
 	end
+	
 	opponentNotes={}
 	for i = 1,DirAmmo[songData.mania] do
 		noteLanes[i]={};
@@ -674,6 +675,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 		playerNoteOffsets[i] = {X=0,Y=0} -- Create a point LuaU type maybe?
 		opponentNoteOffsets[i] = {X=0,Y=0}
 	end
+	
 	local modchart = nil
 	if module.settings.Modcharts then
 		local childs = songName.Parent:GetChildren()
@@ -695,6 +697,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 		modchart = SongIdInfo.Script and mods.Modcharts:FindFirstChild(SongIdInfo.Script) or mods.Modcharts:FindFirstChild(songData.song)
 		table.insert(modcharts, modchart)
 	end
+	
 	startingSong=true
 
 	internalSettings.autoSize = module.settings.maniaAutoSize and zoomManiaStuff[songData.mania] or 1 -- set a size depending on mania mode
@@ -767,6 +770,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			button.Parent = gameUI.TouchScreen
 		end
 	end
+	
 	module.PositioningParts.songName = songData.song
 	if SongIdInfo.PlaybackSpeed then
 		instrSound.PlaybackSpeed *= SongIdInfo.PlaybackSpeed
@@ -821,7 +825,8 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 				BFAssetInfo = Icons[module.settings.CustomIcon] or Icons.bf
 			end
 		end
-		if (module.PositioningParts.isOpponentAvailable~=nil) then
+		
+		--[[if (module.PositioningParts.isOpponentAvailable~=nil) then
 			if not flipMode then
 				--module.OpponentSettings.OppIcon = DadAssetInfo
 				--GameplayEvent:Fire("OppIcon",DadAssetInfo)
@@ -831,7 +836,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 				--GameplayEvent:Fire("OppIcon",BFAssetInfo)
 				--BFAssetInfo = module.OpponentSettings.OppIcon or Icons.bf
 			end
-		end
+		end]]
 		-- Try to reset the animations
 		BFIcon.Animations = {}
 		DadIcon.Animations = {}
@@ -919,12 +924,20 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			end
 		end
 		local BFOffset = CFrame.new(0,0,0)
-		if SongIdInfo.BF2Animations then
-			BFOffset = CFrame.new(-1.75, 0, 0.25)
+		
+		if SongIdInfo.AnimOffsets then
+			local offsets = SongIdInfo.AnimOffsets
+			local sides = {"Left", "Right", "Left2", "Right2"}
+			
+			for i = 1, #offsets do
+				module.PositioningParts[sides[i]].CFrame *= offsets[i]
+			end
+		elseif SongIdInfo.BF2Animations then
+			module.PositioningParts.Left.CFrame *= CFrame.new(-1.75, 0, 0.25)
 		end
 		-- module.PositioningParts.isPlayer:list this lists players in spot 1, 2, 3, and 4
 		if flipMode then -- Character.new(char:string,CFrame: a, isPlayer:bool, Animations, AnimationName: g, Microphone: string)
-			PlayerObjects.BF = Character.new(BFChar,module.PositioningParts.Left.CFrame * BFOffset,module.PositioningParts.isPlayer[1],BFAnimations,BFAnim.Name,BFAnimations.Microphone, speedModifier) -- Opponent character as BF
+			PlayerObjects.BF = Character.new(BFChar,module.PositioningParts.Left.CFrame,module.PositioningParts.isPlayer[1],BFAnimations,BFAnim.Name,BFAnimations.Microphone, speedModifier) -- Opponent character as BF
 
 			if not module.PositioningParts.isPlayer[1] then PlayerObjects.BF.Obj.Parent=workspace end -- checks if there is a player in spot 1 and if not place a placeholder character in the game
 			PlayerObjects.Dad = Character.new(DadChar,module.PositioningParts.Right.CFrame,module.PositioningParts.isPlayer[2],DadAnimations,DadAnim.Name,DadAnimations.Microphone, speedModifier) -- Player character as Dad
@@ -932,7 +945,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 		else--if not flipMode then
 			PlayerObjects.Dad = Character.new(DadChar,module.PositioningParts.Right.CFrame,module.PositioningParts.isPlayer[2],DadAnimations,DadAnim.Name,DadAnimations.Microphone, speedModifier) -- Opponent character as Dad
 			if not module.PositioningParts.isPlayer[2] then PlayerObjects.Dad.Obj.Parent=workspace end -- checks if there is a player in spot 2
-			PlayerObjects.BF = Character.new(BFChar,module.PositioningParts.Left.CFrame * BFOffset,module.PositioningParts.isPlayer[1],BFAnimations,BFAnim.Name,BFAnimations.Microphone, speedModifier) -- Player character as BF
+			PlayerObjects.BF = Character.new(BFChar,module.PositioningParts.Left.CFrame,module.PositioningParts.isPlayer[1],BFAnimations,BFAnim.Name,BFAnimations.Microphone, speedModifier) -- Player character as BF
 			if not module.PositioningParts.isPlayer[1] then PlayerObjects.BF.Obj.Parent=workspace end 
 		end	
 
@@ -1070,13 +1083,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	-- preload the notes
 	local maniac = keyAmmo[songData.mania+1]
 
-	local noteGroups = { -- DEPRECATED, please refer to SongId with "NoteGroup" as an item.
-		['godly final destination'] = 'ShaggyxMatt';
-		['expurgation'] = 'ExTricky';
-		["hellclown"] = "FireNote";
-		["madness"] = "FireNote";
-	}
-	local noteGroup = SongIdInfo.NoteGroup or noteGroups[songData.song:lower() ] or songName:GetAttribute('noteGroup') or 'Default'
+	local noteGroup = SongIdInfo.NoteGroup or songName:GetAttribute('noteGroup') or 'Default'
 	if(#modcharts > 0)then 
 		local vars = {
 			flipMode=flipMode;
@@ -1306,7 +1313,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 		
 		for i = 1, #loadedModchartData do
 			if loadedModchartData[i].EventTrigger then
-				loadedModchartData[i].EventTrigger(curEvent,value1,value2)
+				loadedModchartData[i].EventTrigger(curEvent, value1, value2, ...)
 			end
 		end
 		
@@ -1781,9 +1788,12 @@ local function eventNoteEarlyTrigger(eventNote)
 		end
 	end
 	Switch()
+	:default(function()
+		return 0
+	end)
 	:case('Kill Henchmen',function()
 		return 200
-	end)
+	end)(eventNote[2][1][1])
 	return 0
 end
 
@@ -1815,7 +1825,7 @@ local loadEvents = function()
 				if event.sectionNotes then
 					for _,event2 in pairs(event.sectionNotes) do
 						for i = 1, #event2 do
-							local eary = eventNoteEarlyTrigger(event2)
+							local eary = eventNoteEarlyTrigger(event2[i])
 							if eary~=nil then event2[1] -= eary end
 						end
 					end
@@ -1843,8 +1853,8 @@ local loadEvents = function()
 end
 
 function checkEventNote()
-	while(#eventNotes > 0)do
-		local offset = Conductor.safeZoneOffset + module.settings.ChartOffset + (SongIdInfo.Offset or 0)
+	while(#eventNotes > 0)do 
+		local offset =  Conductor.safeZoneOffset + module.settings.ChartOffset + (SongIdInfo.Offset or 0)
 		for i = 1, #eventNotes do
 			local Time = eventNotes[i][1]
 			if(Conductor.SongPos < Time + offset)then
@@ -1858,13 +1868,8 @@ function checkEventNote()
 				name = eventNotes[i][2][ii][1]
 				value1 = eventNotes[i][2][ii][2]
 				value2 = eventNotes[i][2][ii][3]
-			
+				
 				module.processEvent((name), value1, value2);
-				for i = 1, #loadedModchartData do
-					if loadedModchartData[i].EventTrigger then
-						loadedModchartData[i].EventTrigger(name, value1, value2)
-					end
-				end
 			end
 			table.remove(eventNotes, i)
 			break;
@@ -2257,28 +2262,28 @@ end
 --voiceSound:Stop()
 --end
 function module.endSong()
-	local songPlayed = tostring(songData.song) .. "-" .. tostring(curSong.Name)
-	if #module.settings.SongScores > 0 then
-		for i = 1, #module.settings.SongScores do
-			--print(module.PlayerStats.Score)
-			if module.settings.SongScores[i][1] == songPlayed and module.PlayerStats.Score > 0 then
-				if module.settings.SongScores[i][2] < module.PlayerStats.Score or module.settings.SongScores[i][2] == nil then
-					module.settings.SongScores[i] = {
-						songPlayed,
-						module.PlayerStats.Score,
-						accuracy
-					}
-				end
-			end
-		end
-	else
-		table.insert(module.settings.SongScores, songPlayed)
-		module.settings.SongScores[1] = {
-			songPlayed,
-			module.PlayerStats.Score,
-			accuracy
-		}
-	end
+	--local songPlayed = tostring(songData.song) .. "-" .. tostring(curSong.Name)
+	--if #module.settings.SongScores > 0 then
+	--	for i = 1, #module.settings.SongScores do
+	--		--print(module.PlayerStats.Score)
+	--		if module.settings.SongScores[i][1] == songPlayed and module.PlayerStats.Score > 0 then
+	--			if module.settings.SongScores[i][2] < module.PlayerStats.Score or module.settings.SongScores[i][2] == nil then
+	--				module.settings.SongScores[i] = {
+	--					songPlayed,
+	--					module.PlayerStats.Score,
+	--					accuracy
+	--				}
+	--			end
+	--		end
+	--	end
+	--else
+	--	table.insert(module.settings.SongScores, songPlayed)
+	--	module.settings.SongScores[1] = {
+	--		songPlayed,
+	--		module.PlayerStats.Score,
+	--		accuracy
+	--	}
+	--end
 	--[[local InfoRetriever = repS.InfoRetriever
 	
 	local cloneData = {
@@ -2290,14 +2295,17 @@ function module.endSong()
 	shared.song=nil;
 	shared.songSpeed=0;
 	speedModifier = 1;
+	
 	if CameraTween then
 		CameraTween:Cancel()
 	end
-	gameUI.waste:ClearAllChildren()
-	gameUI.realGameUI.waste:ClearAllChildren()
-	gameUI.realGameUI.Notes.waste:ClearAllChildren()
-	gameUI.HudUI.waste:ClearAllChildren()
-	gameUI.realGameUI.Flash.Visible = false
+	
+	for i = 1, #loadedModchartData do
+		if loadedModchartData[i].cleanUp then
+			loadedModchartData[i].cleanUp()
+		end
+	end
+	
 	scrollSpeedChanging = false
 	generatedSong=false
 	events = {}
@@ -2307,45 +2315,24 @@ function module.endSong()
 	boomSpeed = 4
 	camSpeed = 1
 	defaultCamZoom = .05
-	if mapProps then
-		mapProps:Destroy()
-		local Props = game.ReplicatedStorage.HiddenProps:GetChildren()
-		for i = 1, #Props do
-			Props[i].Parent = workspace.Props
-		end
-		local Props2 = game.ReplicatedStorage.HiddenMaps:GetChildren()
-		for i = 1, #Props2 do
-			Props2[i].Parent = game.workspace.BaseMap
-		end
-	end
-	local PerformingSpots = game.ReplicatedStorage.HiddenBoomBoxes:GetChildren()
-	for i = 1, #PerformingSpots do
-		if PerformingSpots[i].Name == "BoomBox" then
-			PerformingSpots[i].Parent = workspace.PerformingSpots
-		end
-	end
-	mapProps=nil
+	
+	resetGroup("Map")
+	
 	isCameraOnForcedPos = false
 	instrSound.TimePosition = 0
 	voiceSound.TimePosition = 0
 	camZooming = true
-	gameUI.realGameUI.Rotation = 0
-	gameUI.realGameUI.Notes.Rotation = 0
-	gameUI.realGameUI.Overlay.Visible = false
+	
 	instrSound:Stop()
 	voiceSound:Stop()
-	Conductor.CurrentTrackPos = 0
-	Conductor.AdjustedSongPos = 0
-	Conductor.timePosition = 0
-	Conductor.songPosition = 0
-	game.Lighting.ClockTime = 6.5
+	game.Lighting.ClockTime = defaultClockTime
+	
+	resetGroup("UI")
+	
+	resetGroup("Conductor")
+	
 	pcall(KillclientAnims)
 	customScoreFormat = ""
-	for i = 1, #loadedModchartData do
-		if loadedModchartData[i].cleanUp then
-			loadedModchartData[i].cleanUp()
-		end
-	end
 	for _,button in next,gameUI.TouchScreen:GetChildren() do
 		UserInputBind.RemoveBind(button)
 		button:Destroy()
@@ -2365,37 +2352,16 @@ function module.endSong()
 		if Note and Note.Destroy then Note:Destroy() end
 	end
 	--2.Character:FindFirstChild("HumanoidRootPart").Anchored = false
+	resetGroup("PositioningParts")
+	
 	bindNameDir = {}
-	module.PositioningParts.PlayAs = nil
-	module.PositioningParts.AccuracyRate = nil
-	module.PositioningParts.Left = nil
-	module.PositioningParts.Left2 = module.PositioningParts.Left
-	module.PositioningParts.Right = nil
-	module.PositioningParts.Right2 = nil
-	module.PositioningParts.Camera = nil
-	module.PositioningParts.CameraPlayer = false
-	camControls.BehaviourType = "Separate"
-	camControls.zoom = 0
-	camControls.hudZoom = .05
-	camControls.camZoom = 0
+	
 	cam.CameraType = Enum.CameraType.Custom
 	cam.FieldOfView = 70
-	DadNotesUI.Visible = false
-	BFNotesUI.Visible = false
-	HPBarBG.Visible = false
-	BFIcon.GUI.Visible = false
-	DadIcon.GUI.Visible = false
-	BFBG.Visible = false
-	DadBG.Visible = false
-	TimeBar.Visible = false
 	flipMode = nil
 	songEndEvent:Fire()
-	if PlayerObjects.BF then
-		PlayerObjects.BF:Destroy()
-	end
-	if PlayerObjects.Dad then
-		PlayerObjects.Dad:Destroy()
-	end
+	if PlayerObjects.BF then PlayerObjects.BF:Destroy() end
+	if PlayerObjects.Dad then PlayerObjects.Dad:Destroy() end
 	if PlayerObjects.BF2 then PlayerObjects.BF2:Destroy() end
 	if PlayerObjects.Dad2 then PlayerObjects.Dad2:Destroy() end
 end
@@ -2404,10 +2370,9 @@ function module.startSong()
 	startingSong=false
 
 	instrSound:Resume()
-	Conductor.CurrentTrackPos = 0
-	Conductor.AdjustedSongPos = 0
-	Conductor.timePosition=0
-	Conductor.songPosition=0
+	
+	resetGroup("Conductor")
+	
 	if(songData.needsVoices)then
 		voiceSound:Resume()
 	end
@@ -2712,6 +2677,73 @@ function GoodHit(daNote)
 	--end
 	--end
 	UpdateAccuracy()
+end
+
+function resetGroup(group)
+	Switch()
+	:case("UI", function()
+		DadNotesUI.Visible = false
+		BFNotesUI.Visible = false
+		HPBarBG.Visible = false
+		BFIcon.GUI.Visible = false
+		DadIcon.GUI.Visible = false
+		BFBG.Visible = false
+		DadBG.Visible = false
+		TimeBar.Visible = false
+		gameUI.realGameUI.Rotation = 0
+		gameUI.realGameUI.Notes.Rotation = 0
+		gameUI.realGameUI.Overlay.Visible = false
+		gameUI.realGameUI.Flash.Visible = false
+		gameUI.realGameUI.Notes.Rotation = 0
+		gameUI.waste:ClearAllChildren()
+		gameUI.realGameUI.waste:ClearAllChildren()
+		gameUI.realGameUI.Notes.waste:ClearAllChildren()
+		gameUI.HudUI.waste:ClearAllChildren()
+	end)
+	:case("Conductor", function()
+		Conductor.SongPos = 0
+		Conductor.CurrentTrackPos = 0
+		Conductor.AdjustedSongPos = 0
+		Conductor.timePosition = 0
+		Conductor.songPosition = 0
+	end)
+	:case("PositioningParts", function()
+		module.PositioningParts.PlayAs = nil
+		module.PositioningParts.AccuracyRate = nil
+		module.PositioningParts.Left = nil
+		module.PositioningParts.Left2 = nil
+		module.PositioningParts.Right = nil
+		module.PositioningParts.Right2 = nil
+		module.PositioningParts.Camera = nil
+		module.PositioningParts.CameraPlayer = false
+	end)
+	:case("camControls", function()
+		camControls.BehaviourType = "Separate"
+		camControls.zoom = 0
+		camControls.hudZoom = .05
+		camControls.camZoom = 0
+	end)
+	:case("Map", function()
+		if mapProps then
+			mapProps:Destroy()
+			local Props = game.ReplicatedStorage.HiddenProps:GetChildren()
+			for i = 1, #Props do
+				Props[i].Parent = workspace.Props
+			end
+			local Props2 = game.ReplicatedStorage.HiddenMaps:GetChildren()
+			for i = 1, #Props2 do
+				Props2[i].Parent = game.workspace.BaseMap
+			end
+		end
+		local PerformingSpots = game.ReplicatedStorage.HiddenBoomBoxes:GetChildren()
+		for i = 1, #PerformingSpots do
+			if PerformingSpots[i].Name == "BoomBox" then
+				PerformingSpots[i].Parent = workspace.PerformingSpots
+			end
+		end
+
+		mapProps=nil
+	end)(group)
 end
 
 local ratingNamesSize = {
@@ -3033,7 +3065,7 @@ function module.fakeScorePopup(noteDiff)
 
 	table.insert(ratingLabels,ratingText)
 	ratingText.Parent = script.Parent
-	local tw = game:service'TweenService':Create(ratingText,TweenInfo.new(.2,Enum.EasingStyle.Linear,Enum.EasingDirection.Out,0,false,Conductor.crochet*0.001),{ImageTransparency = 1})--{TextTransparency=1,TextStrokeTransparency=1})
+	local tw = game:service'TweenService':Create(ratingText,TweenInfo.new(.2/speedModifier,Enum.EasingStyle.Linear,Enum.EasingDirection.Out,0,false,Conductor.crochet*0.001),{ImageTransparency = 1})--{TextTransparency=1,TextStrokeTransparency=1})
 	tw.Completed:connect(function()
 		ratingText:destroy()
 		pcall(game.Destroy,tw)
@@ -3064,7 +3096,7 @@ function module.fakeScorePopup(noteDiff)
 			comboText:SetAttribute("Offset",Vector2.new((26*i)-90,-60)*screenMul)
 			table.insert(ratingLabels,comboText)
 			comboText.Parent = script.Parent
-			local tw = game:service'TweenService':Create(comboText,TweenInfo.new(.2,Enum.EasingStyle.Linear,Enum.EasingDirection.Out,0,false,Conductor.crochet*0.002),{ImageTransparency=1})
+			local tw = game:service'TweenService':Create(comboText,TweenInfo.new(.2/speedModifier,Enum.EasingStyle.Linear,Enum.EasingDirection.Out,0,false,Conductor.crochet*0.002),{ImageTransparency=1})
 			tw.Completed:connect(function()
 				comboText:destroy()
 				pcall(game.Destroy,tw)
@@ -4451,6 +4483,7 @@ function module.Kill()
 			loadedModchartData[i].cleanUp()
 		end
 	end
+	
 	print("death")
 	pcall(KillclientAnims)
 	GameplayEvent:Fire("Death")
