@@ -15,6 +15,12 @@
       
     },
 
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "$ignoreUnknownInstances": true,
+      "$path": "src/ScriptService"
+    },
+
     "StarterGui": {
       
       "$className": "StarterGui",
@@ -23,6 +29,16 @@
         "$className": "ScreenGui",
         "$ignoreUnknownInstances": true,
         "$path": "src/shared"
+      }
+    },
+
+    "Workspace": {
+      "$className": "Workspace",
+
+      "PerformingSpots": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true,
+        "$path": "src/spot"
       }
     }
   }

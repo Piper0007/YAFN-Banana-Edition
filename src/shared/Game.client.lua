@@ -56,6 +56,10 @@ local InfoRetriever = RS.InfoRetriever or RS:WaitForChild("InfoRetriever")
 local GameplayStage = workspace:FindFirstChild("StageRoom")
 local plr = game:GetService("Players").LocalPlayer
 
+local Settings = {
+	SpeedModifier = 1
+}
+
 local function SpotAction()
 	if GameHandler.PositioningParts.PlayAs == nil then
 		return
@@ -106,9 +110,6 @@ local function OWDisplayUpdate(textDisplay)
 end 
 
 local function InitializeGame(Module, PlayerMode, plrs)
-	local Settings = {
-		SpeedModifier = 1
-	}
 	GameHandler.PositioningParts.isOpponentAvailable = InfoRetriever:InvokeServer(0x0,GameHandler.PositioningParts.Spot)
 	local bf, dad, bf2, dad2 = InfoRetriever:InvokeServer(0x3,GameHandler.PositioningParts.Spot)
 	GameHandler.PositioningParts.isPlayer = {bf, dad, bf2, dad2}
@@ -261,7 +262,7 @@ UIHandler.SelectModeEvent:Connect(function(mode, av)
 end)
 
 UIHandler.SongPlayEvent:Connect(function(Module, Mode, av)
-	remote:FireServer(0x1,(Module),PositioningParts.Spot) -- send song loading signal
+	remote:FireServer(0x1,(Module),PositioningParts.Spot, Settings) -- send song loading signal
 	for Name,_ in next,GameHandler.settings.MenuControls do
 		if Name == "QuitSpot" then continue end
 		UserInputBindables.ClearBinds(Name)

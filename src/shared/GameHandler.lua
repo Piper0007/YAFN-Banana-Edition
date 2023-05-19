@@ -925,6 +925,9 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 		end
 		local BFOffset = CFrame.new(0,0,0)
 		
+		module.PositioningParts.Left2.CFrame = module.PositioningParts.Left.CFrame * CFrame.new(1.75,0,-2)
+		module.PositioningParts.Right2.CFrame = module.PositioningParts.Right.CFrame * CFrame.new(3,0,3)
+		
 		if SongIdInfo.AnimOffsets then
 			local offsets = SongIdInfo.AnimOffsets
 			local sides = {"Left", "Right", "Left2", "Right2"}
@@ -932,9 +935,11 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			for i = 1, #offsets do
 				module.PositioningParts[sides[i]].CFrame *= offsets[i]
 			end
-		elseif SongIdInfo.BF2Animations then
+		end
+		if SongIdInfo.BF2Animations then
 			module.PositioningParts.Left.CFrame *= CFrame.new(-1.75, 0, 0.25)
 		end
+		
 		-- module.PositioningParts.isPlayer:list this lists players in spot 1, 2, 3, and 4
 		if flipMode then -- Character.new(char:string,CFrame: a, isPlayer:bool, Animations, AnimationName: g, Microphone: string)
 			PlayerObjects.BF = Character.new(BFChar,module.PositioningParts.Left.CFrame,module.PositioningParts.isPlayer[1],BFAnimations,BFAnim.Name,BFAnimations.Microphone, speedModifier) -- Opponent character as BF
@@ -976,7 +981,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 					Dad2Animations[AnimObj.Name] = string.sub(AnimObj.AnimationId,14)
 				end
 			end
-			PlayerObjects.Dad2 = Character.new(Dad2Char,module.PositioningParts.Right.CFrame * CFrame.new(3,0,3),module.PositioningParts.isPlayer[4],Dad2Animations,SongIdInfo.Dad2Animations,Dad2Animations.Microphone, speedModifier)
+			PlayerObjects.Dad2 = Character.new(Dad2Char,module.PositioningParts.Right2.CFrame,module.PositioningParts.isPlayer[4],Dad2Animations,SongIdInfo.Dad2Animations,Dad2Animations.Microphone, speedModifier)
 			PlayerObjects.Dad2:flipDir()
 			if not module.PositioningParts.isPlayer[4] then PlayerObjects.Dad2.Obj.Parent = workspace end
 		end
@@ -1006,7 +1011,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 					BF2Animations[AnimObj.Name] = string.sub(AnimObj.AnimationId,14)
 				end
 			end
-			PlayerObjects.BF2 = Character.new(BF2Char,module.PositioningParts.Left.CFrame * CFrame.new(1.75,0,-2),module.PositioningParts.isPlayer[3],BF2Animations,SongIdInfo.BF2Animations,BF2Animations.Microphone, speedModifier)
+			PlayerObjects.BF2 = Character.new(BF2Char,module.PositioningParts.Left2.CFrame,module.PositioningParts.isPlayer[3],BF2Animations,SongIdInfo.BF2Animations,BF2Animations.Microphone, speedModifier)
 			if not module.PositioningParts.isPlayer[3] then PlayerObjects.BF2.Obj.Parent = workspace end
 		end	
 	end
