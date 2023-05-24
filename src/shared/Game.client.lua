@@ -267,11 +267,11 @@ UIHandler.SongPlayEvent:Connect(function(Module, Mode, av)
 		if Name == "QuitSpot" then continue end
 		UserInputBindables.ClearBinds(Name)
 	end
-	
+
 	UIHandler.ToggleUISongPickVisibility(false)
 	OwnerWait.Visible = true
 	LeaveButton.Visible = false
-	
+
 	InitializeGame(Module, Mode, nil)
 end)
 GameHandler.endSongEvent:Connect(function()
@@ -307,6 +307,7 @@ remote.OnClientEvent:Connect(function(signalType,...)
 		end
 		UIHandler.ToggleSettingsUI(false)
 		if ESECon then ESECon:Disconnect() end
+
 		local BF = Spot:FindFirstChild("Boyfriend")
 		local BF2 = Spot:FindFirstChild("Boyfriend2")
 		local Dad = Spot:FindFirstChild("Dad")
@@ -314,8 +315,8 @@ remote.OnClientEvent:Connect(function(signalType,...)
 		local CamPart = Spot:FindFirstChild("CameraOrigin")
 		local ARO = Spot:FindFirstChild("AccuracyRateOrigin")
 		local GF = Spot:FindFirstChild("Girlfriend") -- (unused)
-		
-		
+
+
 		if GameHandler.PositioningParts.CameraPlayer == true then
 			PositioningParts.Left = GameHandler.PositioningParts.e
 			PositioningParts.Left2 = GameHandler.PositioningParts.w
@@ -327,8 +328,8 @@ remote.OnClientEvent:Connect(function(signalType,...)
 			PositioningParts.Right = Dad
 			PositioningParts.Right2 = Dad2
 		end
-		
-		
+
+
 		PositioningParts.AccuracyRate = ARO
 		PositioningParts.Camera = CamPart
 		PositioningParts.Spot = Spot
@@ -343,9 +344,9 @@ remote.OnClientEvent:Connect(function(signalType,...)
 				PositioningParts.PlayAs = false
 			end
 		end
-		
+
 		-- Spot Non-owner stuff.
-		
+
 		if isOwner then
 			return
 		end
@@ -355,7 +356,7 @@ remote.OnClientEvent:Connect(function(signalType,...)
 			val,songToPlay = remote.OnClientEvent:Wait()
 		until val == 0x2  or PositioningParts.PlayAs == nil
 		-- Game Round Init.
-		
+
 		if PositioningParts.PlayAs == nil then
 			return
 		end
@@ -368,9 +369,10 @@ remote.OnClientEvent:Connect(function(signalType,...)
 		UIHandler.ToggleSettingsUI(true)
 		UIHandler.ToggleUISongPickVisibility(false)
 		OwnerWait.Visible = false
-		PositioningParts.Left = nil
-		PositioningParts.Left2 = nil
-		PositioningParts.Right = nil
+		--PositioningParts.Left = nil
+		--PositioningParts.Left2 = nil
+		--PositioningParts.Right = nil
+		--PositioningParts.Right2 = nil
 		PositioningParts.AccuracyRate = nil
 		PositioningParts.Camera = nil
 		PositioningParts.PlayAs = nil
@@ -382,7 +384,16 @@ remote.OnClientEvent:Connect(function(signalType,...)
 				extSpotSound.Volume = 1
 			end
 		end
-		GameHandler.endSong()
+		local success, issue = pcall(function()
+			GameHandler.endSong()
+		end)
+		if not success then
+			warn(issue)
+		end
+		PositioningParts.Left = nil
+		PositioningParts.Left2 = nil
+		PositioningParts.Right = nil
+		PositioningParts.Right2 = nil
 		plr.Character.HumanoidRootPart.Anchored = false
 	elseif signalType == 0x3 then -- ownership transfer / force song selection UI [UNUSED]
 		UIHandler.ToggleUISongPickVisibility(true)
@@ -436,7 +447,7 @@ RunS.RenderStepped:connect(function(elapsed)
 		quitTimer-=elapsed;
 	end
 	if(quitTimer<0)then quitTimer=0 end
-	
+
 	if(quitTimer>0)then
 		LeaveButton.UIGradient.Enabled=true;
 		LeaveButton.UIGradient.Offset = Vector2.new(-1+((quitTimer/quitTime)*2),0)
@@ -482,7 +493,7 @@ if lastSettings then
 			print(("Set %s with %s!"):format(Name,tostring(Value)))
 		elseif type(originalValue) == "table" then
 			if Name == "Keybinds" then
-				
+
 				for Mania,DirectionKeybinds in next,Value do
 					for Direction,Keycodes in next,DirectionKeybinds do
 						--[=
@@ -492,7 +503,7 @@ if lastSettings then
 							if isValueValid then
 								UIHandler.SetGameBind(Mania,Direction,i,Keycode)
 								--originalValue[Mania][Direction][i] = Keycode
-								
+
 							end
 						end--]=]
 					end

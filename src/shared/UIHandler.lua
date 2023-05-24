@@ -631,12 +631,12 @@ function UIHandler.ChangeDiff(x)-- x can be either a number or a string.
 	--print(gameSettings.settings.SongScores)
 	local scoretext = '000000000'
 	local accuracytext = '0.00%'
-	for i = 1, #gameSettings.settings.SongScores do
+	--[[for i = 1, #gameSettings.settings.SongScores do
 		if gameSettings.settings.SongScores[i][1] == songPlayed then
 			scoretext = tostring(gameSettings.settings.SongScores[i][2])
 			accuracytext = tostring(gameSettings.settings.SongScores[i][3]) .. "%"
 		end
-	end
+	end]]
 	Score.Points.Text = scoretext --gameSettings.settings.SongScores
 	Score.Accuracy.Text = accuracytext
 	local IconInfo = (Icons[songData.song.player2] or Icons.Face)
@@ -777,12 +777,12 @@ function UIHandler.ToggleUISongPickVisibility(state:bool)
 	--print(gameSettings.settings.SongScores)
 	local scoretext = '000000000'
 	local accuracytext = '0.00%'
-	for i = 1, #gameSettings.settings.SongScores do
+	--[[for i = 1, #gameSettings.settings.SongScores do
 		if gameSettings.settings.SongScores[i][1] == songPlayed then
 			scoretext = tostring(gameSettings.settings.SongScores[i][2])
 			accuracytext = tostring(gameSettings.settings.SongScores[i][3]) .. "%"
 		end
-	end
+	end]]
 	Score.Points.Text = scoretext --gameSettings.settings.SongScores
 	Score.Accuracy.Text = accuracytext
 	UIHandler.DiskAnimSetState(state)

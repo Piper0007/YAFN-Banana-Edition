@@ -39,6 +39,7 @@ local TimeBar = gameUI.TimeBar
 local customScoreFormat = ""
 local GFSection = false
 local Plr2 = nil
+local benginPos = {CFrame.new(), CFrame.new(), CFrame.new(), CFrame.new()}
 
 local noteScaleRatio = Vector2.new(448,684) -- TODO: do this programatically
 -- (Create a Frame with a size of 0,1280,0,720 w/ the aspectratioconstraint in it and get the absolutesize from it for this variable)
@@ -113,6 +114,8 @@ local defaultScreenSize = Vector2.new(1280,720)
 local ScreenRatio = cam.ViewportSize.Y/cam.ViewportSize.X
 local defaultScreenRatio = defaultScreenSize.Y/defaultScreenSize.X
 local ratioDiff = ScreenRatio / defaultScreenRatio
+local ratioDiffX = cam.ViewportSize.X / defaultScreenSize.X
+local ratioDiffY = cam.ViewportSize.Y / defaultScreenSize.Y
 -- listing math things
 local ceil = math.ceil
 local floor = math.floor
@@ -479,6 +482,18 @@ function playSound(snd,vol)
 	game:service'Debris':AddItem(newSound,newSound.TimeLength+2)--]]
 end
 
+function addSprite(tag, imageId, pos, size)
+	local image = gameUI.realGameUI.Overlay:Clone()
+	local x = pos.X.Offset / ratioDiffX
+	local y = pos.Y.Offset * ratioDiffY
+	image.Position = UDim2.new(pos.X.Scale, x, pos.Y.Scale, y)
+	image.Size = size--UDim2.new(size.X.Scale / ratioDiff, size.X.Offset, size.Y.Scale / ratioDiff, size.Y.Offset)
+	image.Name = tag
+	image.Image = imageId
+	image.Visible = true
+	return image
+end
+
 function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	generatedSong=false
 	startedCountdown=false
@@ -502,6 +517,11 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	camControls.BehaviourType = "Separate"
 	camControls.StayOnCenter = false
 	camControls.DisableLerp = false
+	
+	local sides = {"Left", "Right", "Left2", "Right2"}
+	for i = 1, #sides do
+		benginPos[i] = module.PositioningParts[sides[i]].CFrame
+	end
 	
 	resetGroup("Conductor")
 
@@ -928,8 +948,10 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 		module.PositioningParts.Left2.CFrame = module.PositioningParts.Left.CFrame * CFrame.new(1.75,0,-2)
 		module.PositioningParts.Right2.CFrame = module.PositioningParts.Right.CFrame * CFrame.new(3,0,3)
 		
+		local offsets = {CFrame.new(), CFrame.new(), CFrame.new(), CFrame.new()}
+		
 		if SongIdInfo.AnimOffsets then
-			local offsets = SongIdInfo.AnimOffsets
+			offsets = SongIdInfo.AnimOffsets
 			local sides = {"Left", "Right", "Left2", "Right2"}
 			
 			for i = 1, #offsets do
@@ -1089,6 +1111,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	local maniac = keyAmmo[songData.mania+1]
 
 	local noteGroup = SongIdInfo.NoteGroup or songName:GetAttribute('noteGroup') or 'Default'
+	print(modcharts)
 	if(#modcharts > 0)then 
 		local vars = {
 			flipMode=flipMode;
@@ -1121,6 +1144,8 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			initialSpeed=initialSpeed;
 			mapProps=mapProps;
 			playbackRate=speedModifier;
+			ratio={X=ratioDiffX, Y=ratioDiffY, All=ratioDiff};
+			addSprite=addSprite;
 		}
 		for i = 1, #modcharts do
 			table.insert(loadedModchartData, require(modcharts[i]));
@@ -1293,7 +1318,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 					if #events > 0 then
 						events[1]["song"]["events"][#events[1]["song"]["events"]+1] = eventData
 					else
-						table.insert(events, {song = {events = eventData}})
+						table.insert(events, {song = {events = {eventData}}})
 					end
 					
 				end
@@ -1827,13 +1852,9 @@ local loadEvents = function()
 			local song = events[n].song
 			local loop = song.events ~= nil and song.events or song.notes or songData.notes
 			for i,event in pairs(loop) do
-				if event.sectionNotes then
-					for _,event2 in pairs(event.sectionNotes) do
-						for i = 1, #event2 do
-							local eary = eventNoteEarlyTrigger(event2[i])
-							if eary~=nil then event2[1] -= eary end
-						end
-					end
+				if event then
+					local eary = eventNoteEarlyTrigger(event)
+					if eary~=nil then event[1] -= eary end
 				else
 					warn("Try moving the events to be inside the 'events' array")
 					--[[task.spawn(function()
@@ -2030,7 +2051,7 @@ end
 
 
 function module.startCountdown(customIcon)
-	TS:Create(cam, TweenInfo.new(2.5/speedModifier,Enum.EasingStyle.Quad,Enum.EasingDirection.InOut),{FieldOfView = 70-(defaultCamZoom*25)}):Play()
+	--TS:Create(cam, TweenInfo.new(2.5/speedModifier,Enum.EasingStyle.Quad,Enum.EasingDirection.InOut),{FieldOfView = 70-(defaultCamZoom*25)}):Play()
 	
 	if SongIdInfo.mapProps and repS.Maps:FindFirstChild(SongIdInfo.mapProps) then
 		mapProps.Parent = workspace.Maps
@@ -2308,6 +2329,15 @@ function module.endSong()
 	for i = 1, #loadedModchartData do
 		if loadedModchartData[i].cleanUp then
 			loadedModchartData[i].cleanUp()
+		end
+	end
+	
+	
+	--print(module.PositioningParts)
+	local sides = {"Left", "Right", "Left2", "Right2"}
+	for i = 1, #sides do
+		if table.find(module.PositioningParts, sides[i]) then
+			module.PositioningParts[sides[i]].CFrame = benginPos[i]
 		end
 	end
 	
@@ -3950,7 +3980,7 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 				end
 				daNote:Update()
 				if(daNote.TooLate)then
-					if(daNote.TooLate or not daNote.GoodHit) and (daNote.HealthLoss==0) and daNote.MustPress and not daNote.Destroyed and daNote.MissPunish and not (module.settings.ChillMode and module.PositioningParts.isOpponentAvailable == nil) then
+					if(daNote.TooLate or not daNote.GoodHit) and (daNote.HealthLoss==0) and daNote.MustPress and not daNote.Destroyed and daNote.MissPunish then
 						--voiceSound.Volume=0
 						MissNote(daNote);
 					end
@@ -4293,7 +4323,7 @@ RS:BindToRenderStep("CameraUpdate", Enum.RenderPriority.Camera.Value - 1, functi
 	end
 
 	realGameUI.Size = UDim2.new(1+(camControls.camZoom),0,1+(camControls.camZoom),0)
-	hudUI.Size = UDim2.new(((70/fieldOfView)+camControls.camZoom),0,((70/fieldOfView)+camControls.camZoom),0)
+	hudUI.Size = UDim2.new(((70/fieldOfView)),0,((70/fieldOfView)),0)
 	cam.FieldOfView = 70-(camControls.hudZoom*25) --70/camControls.hudZoom -- --70-(camControls.hudZoom*100)	--(defaultCamZoom*70)-(camControls.hudZoom*100)
 
 	if module.PositioningParts.AccuracyRate then
