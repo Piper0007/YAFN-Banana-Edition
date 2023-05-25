@@ -376,20 +376,28 @@ remote.OnClientEvent:Connect(function(signalType,...)
 		PositioningParts.AccuracyRate = nil
 		PositioningParts.Camera = nil
 		PositioningParts.PlayAs = nil
-		PositioningParts.Spot = nil
 		instrSound.Playing = false
 		vocalSound.Playing = false
+		local sidesPos
 		if extSpotSounds then
 			for _,extSpotSound in next,extSpotSounds do
 				extSpotSound.Volume = 1
 			end
 		end
 		local success, issue = pcall(function()
-			GameHandler.endSong()
+			sidesPos = GameHandler.endSong()
 		end)
-		if not success then
+		if issue then
 			warn(issue)
 		end
+		local parts = {"Boyfriend", "Dad", "Boyfriend2", "Dad2"}
+		for i = 1, #parts do
+			local part = PositioningParts.Spot:FindFirstChild(parts[i])
+			if sidesPos[i] then
+				part.CFrame = sidesPos[i]
+			end
+		end
+		PositioningParts.Spot = nil
 		PositioningParts.Left = nil
 		PositioningParts.Left2 = nil
 		PositioningParts.Right = nil

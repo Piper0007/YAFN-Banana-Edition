@@ -434,7 +434,7 @@ function shakeUI(intensity, duration)
 		if elapsed < duration then
 			gameUI.realGameUI.Position = UDim2.new(0.5,(random(-intensity,intensity)),0.5,(random(-intensity,intensity)))
 		end
-		elapsed += HB:Wait()
+		elapsed += RS.RenderStepped:Wait()
 	end
 	
 	gameUI.realGameUI.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -446,7 +446,7 @@ function shakeScreen(intensity, duration)
 		if elapsed < duration then
 			snapCamera(offsetUI(intensity))
 		end
-		elapsed += HB:Wait()
+		elapsed += RS.RenderStepped:Wait()
 	end
 	
 	snapCamera(CFrame.new())
@@ -518,11 +518,6 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	camControls.StayOnCenter = false
 	camControls.DisableLerp = false
 	
-	local sides = {"Left", "Right", "Left2", "Right2"}
-	for i = 1, #sides do
-		benginPos[i] = module.PositioningParts[sides[i]].CFrame
-	end
-	
 	resetGroup("Conductor")
 
 	Conductor.elapsed=0
@@ -589,7 +584,12 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	instrSound.PlaybackSpeed=speedModifier
 	voiceSound.PlaybackSpeed=speedModifier
 	
-	local camSizeX = cam.ViewportSize.X
+	local sides = {"Left", "Right", "Left2", "Right2"}
+	for i = 1, #sides do
+		benginPos[i] = module.PositioningParts[sides[i]].CFrame
+	end
+	
+	local camSizeX = cam.ViewportSize.X 
 	local data = require(songName)--songCache[songName] or require(songs:FindFirstChild(songName) or songs.Philly)
 	if(typeof(data)=='string')then
 		data=game:service'HttpService':JSONDecode(data)
@@ -1111,7 +1111,6 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	local maniac = keyAmmo[songData.mania+1]
 
 	local noteGroup = SongIdInfo.NoteGroup or songName:GetAttribute('noteGroup') or 'Default'
-	print(modcharts)
 	if(#modcharts > 0)then 
 		local vars = {
 			flipMode=flipMode;
@@ -1480,7 +1479,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 				end
 				local oldSpeed = initialSpeed
 				local speed = tonumber(value1) or 1
-				local duration = tonumber(value2) or 0
+				local duration = (tonumber(value2) or 0)/speedModifier
 				local newSpeed = (module.settings.CustomSpeed * speed)
 				local songSpeedTween = ((initialSpeed/.45)/songData.speed) * module.settings.CustomSpeed
 				local elapsed = 0
@@ -1491,8 +1490,8 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 					scrollSpeedChanging = true
 					ScrollSpeedThread = task.spawn(function()
 						local loops = 0
-						while loops < 100 and elapsed < duration and not songEnded do
-							songSpeedTween = numLerp(songSpeedTween, newSpeed, elapsed / (duration/speedModifier))
+						while elapsed < duration and not songEnded do
+							songSpeedTween = numLerp(songSpeedTween, newSpeed, elapsed / duration)
 							initialSpeed = (songData.speed * .45 * songSpeedTween)
 							for i = 1, #unspawnedNotes do
 								unspawnedNotes[i].InitialPos = getPosFromTime(unspawnedNotes[i].StrumTime)
@@ -1500,11 +1499,10 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 							for i = 1, #notes do
 								notes[i].InitialPos = getPosFromTime(notes[i].StrumTime)
 							end
-							elapsed += HB:Wait()
-							loops += 1
+							elapsed += RS.RenderStepped:Wait()
 						end
+						scrollSpeedChanging = false
 					end)
-					scrollSpeedChanging = false
 				end
 			end
 		end
@@ -1894,7 +1892,7 @@ function checkEventNote()
 				name = eventNotes[i][2][ii][1]
 				value1 = eventNotes[i][2][ii][2]
 				value2 = eventNotes[i][2][ii][3]
-				
+
 				module.processEvent((name), value1, value2);
 			end
 			table.remove(eventNotes, i)
@@ -2399,6 +2397,8 @@ function module.endSong()
 	if PlayerObjects.Dad then PlayerObjects.Dad:Destroy() end
 	if PlayerObjects.BF2 then PlayerObjects.BF2:Destroy() end
 	if PlayerObjects.Dad2 then PlayerObjects.Dad2:Destroy() end
+	
+	return {benginPos[1], benginPos[2], benginPos[3], benginPos[4]}
 end
 
 function module.startSong()
@@ -3338,7 +3338,7 @@ function beatHit()
 	
 	for i = 1, #loadedModchartData do
 		if(loadedModchartData[i] and loadedModchartData[i].BeatHit)then
-			loadedModchartData[i].BeatHit(curBeat)
+			loadedModchartData[i].BeatHit(totalBeats)
 		end
 	end
 
@@ -3392,7 +3392,7 @@ function stepHit()
 	
 	for i = 1, #loadedModchartData do
 		if(loadedModchartData[i] and loadedModchartData[i].StepHit)then
-			loadedModchartData[i].StepHit(curStep)
+			loadedModchartData[i].StepHit(totalSteps)
 		end
 	end
 
@@ -3743,6 +3743,7 @@ function convertToHMS(Seconds)
 	return Minutes ..":"..Format(Seconds)
 end
 
+
 _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 
 	if(not generatedSong)then return end
@@ -3774,6 +3775,15 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 	end
 
 	local lastNote:Note
+	
+	curStep= lastBPMChange.stepTime + floor((Conductor.SongPos-lastBPMChange.songTime)/Conductor.stepCrochet);
+
+	if (Conductor.SongPos>lastStep+Conductor.stepCrochet-Conductor.safeZoneOffset or Conductor.SongPos<lastStep+Conductor.safeZoneOffset)then
+		if(Conductor.SongPos>lastStep+Conductor.stepCrochet)then
+			stepHit()
+		end
+	end
+	curBeat=round(curStep/4);
 
 	if(generatedSong)then
 		for i = 1,#playerStrums do
@@ -4101,15 +4111,6 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 			break
 		end 
 	end
-
-	curStep= lastBPMChange.stepTime + floor((Conductor.SongPos-lastBPMChange.songTime)/Conductor.stepCrochet);
-
-	if (Conductor.SongPos>lastStep+Conductor.stepCrochet-Conductor.safeZoneOffset or Conductor.SongPos<lastStep+Conductor.safeZoneOffset)then
-		if(Conductor.SongPos>lastStep+Conductor.stepCrochet)then
-			stepHit()
-		end
-	end
-	curBeat=round(curStep/4);
 	-- events (which sucked)
 	--[[
 	local nextEvent = events[1] 
@@ -4150,47 +4151,49 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 	local likeRating = "";
 	local rating2 = ""
 	local rating3 = ""
-	if customScoreFormat == "Kade Engine" or songData.song == "Unlimited Power" or "Psych Engine" then
-		if accuracy == 100 then
-			rating2 = "Perfect!"
-			rating3 = "SS"
-		elseif accuracy >= 90 then
-			rating2 = "Sick!"
-			rating3 = "S"
-		elseif accuracy >= 80 then
-			rating2 = "Great"
-			rating3 = "A"
-		elseif accuracy >= 70 then
-			rating2 = "Good"
-			rating3 = "B"
-		elseif accuracy == 69 then
-			rating2 = "Nice"
-			rating3 = "C"
-		elseif accuracy >= 60 then
-			rating2 = "Meh"
-			rating3 = "C"
-		elseif accuracy >= 50 then
-			rating2 = "Bruh"
-			rating3 = "D"
-		elseif accuracy >= 40 then
-			rating2 = "Bad"
-			rating3 = "F"
-		elseif accuracy >= 0 then
-			rating2 = ""
-		end
+	
+	if accuracy == 100 then
+		rating2 = "Perfect!"
+		rating3 = "SS"
+	elseif accuracy >= 90 then
+		rating2 = "Sick!"
+		rating3 = "S"
+	elseif accuracy >= 80 then
+		rating2 = "Great"
+		rating3 = "A"
+	elseif accuracy >= 70 then
+		rating2 = "Good"
+		rating3 = "B"
+	elseif accuracy == 69 then
+		rating2 = "Nice"
+		rating3 = "C"
+	elseif accuracy >= 60 then
+		rating2 = "Meh"
+		rating3 = "C"
+	elseif accuracy >= 50 then
+		rating2 = "Bruh"
+		rating3 = "D"
+	elseif accuracy >= 40 then
+		rating2 = "Bad"
+		rating3 = "F"
+	elseif accuracy >= 0 then
+		rating2 = ""
 	end
-	if customScoreFormat == "Psych Engine" or customScoreFormat == "Kade Engine" then
-		if rates.miss < 1 then
-			if totalPlayed < 1 then likeRating = "?" end
-			if (rates.sick > 0) then likeRating = "SFC" end
-			if (rates.good > 0) then likeRating = "GFC" end
-			if (rates.bad > 0) then likeRating = "FC" end
-		elseif (rates.miss > 0 and rates.miss < 10) then
-			likeRating = "SDCB"
-		elseif (rates.miss >= 10) then
-			likeRating = "Clear"
-		end
-		local ScoringAlt = gameUI.ScoringAlt
+	
+	if rates.miss < 1 then
+		if totalPlayed < 1 then likeRating = "?" end
+		if (rates.sick > 0) then likeRating = "SFC" end
+		if (rates.good > 0) then likeRating = "GFC" end
+		if (rates.bad > 0) then likeRating = "FC" end
+	elseif (rates.miss > 0 and rates.miss < 10) then
+		likeRating = "SDCB"
+	elseif (rates.miss >= 10) then
+		likeRating = "Clear"
+	end
+	
+	ScoreLabel.Size = UDim2.fromScale(1,0.05)
+	ScoreLabel.Text = "Score: " .. tostring(module.PlayerStats.Score) .. " | Misses: " .. tostring(rates.miss) .. " | Rating: ".. tostring(rating2) .. " (" .. tostring(round(floor(accuracy),5)) .. "%)".. " - " .. tostring(likeRating)
+		--local ScoringAlt = gameUI.ScoringAlt
 		--[[if songData.song == "Unlimited Power" then
 			ScoringAlt.Misses.Text = "Misses: " .. tostring(rates.miss)
 			ScoringAlt.Combo.Text = tostring(combo)
@@ -4198,10 +4201,6 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 			ScoringAlt.Accuracy.Text = tostring(round2(accuracy)) .. "% [" ..tostring(likeRating) .. "]"
 			ScoringAlt.Rank.Text = tostring(rating2)
 		end]]
-		if customScoreFormat == "Psych Engine" then
-			ScoreLabel.Size = UDim2.fromScale(1,0.05)
-			ScoreLabel.Text = "Score: " .. tostring(module.PlayerStats.Score) .. " | Misses: " .. tostring(rates.miss) .. " | Rating: ".. tostring(rating2) .. " (" .. tostring(round(floor(accuracy),5)) .. "%)".. " - " .. tostring(likeRating)
-		end
 		--[[if customScoreFormat == "YAFN Engine" then
 			--gameUI.ScoreLabel.BackgroundTransparency = 0.5
 			ScoreLabel.Size = UDim2.fromScale(1,0.036)
@@ -4215,7 +4214,6 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 			ScoreLabel.Size = UDim2.fromScale(1,0.05)
 			ScoreLabel.Text = "Score: " .. tostring(module.PlayerStats.Score) .. " | Combo Breaks: " .. tostring(rates.miss) .. " | Accuracy: " .. tostring(round(floor(accuracy),4)) .. "%".. " | (" .. tostring(likeRating) .. ")"
 		end]]
-	end
 	--[[
 	if(plr.Character)then
 		plr.Character:destroy()
