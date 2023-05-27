@@ -36,9 +36,8 @@ local DadNotesUI = script.Parent.realGameUI.Notes.DadNotes
 local BFNotesUI = script.Parent.realGameUI.Notes.BFNotes
 local DadBG,BFBG = script.Parent.realGameUI.Notes.DadBG,script.Parent.realGameUI.Notes.BFBG
 local TimeBar = gameUI.TimeBar
-local customScoreFormat = ""
+--local customScoreFormat = ""
 local GFSection = false
-local Plr2 = nil
 local benginPos = {CFrame.new(), CFrame.new(), CFrame.new(), CFrame.new()}
 
 local noteScaleRatio = Vector2.new(448,684) -- TODO: do this programatically
@@ -85,7 +84,6 @@ local camSpeed = 1
 local currentSection={}
 local updateMotions={}
 PlayerObjects = {}
-local gfSpeed = 1
 local combo = 0;
 local opponentCombo = 0;
 local speedModifier = 1;
@@ -98,10 +96,7 @@ local defaultCamZoom = .05
 local rotCamSpd = 0;
 local rotCamRange = 0;
 local rotCamInd = 0
-local screenShaking = false
-local scrollSpeedChanging = false
 local isCameraOnForcedPos = false
-local splash = nil
 local songLength = 0
 local falseSongLength = -1
 local defaultClockTime = 6.5 -- Change this to change the time of day!!!
@@ -134,7 +129,6 @@ end
 local CameraTween
 
 -- (ratioDiff * (internalSettings.autoSize * module.settings.customSize))
-local ScrollSpeedThread
 
 local LoadingStatus = {
 	LoadedNotes = 0;
@@ -311,12 +305,12 @@ function module.setProperty(va, value)
 	local split = ''
 	if string.find(va, '.') then
 		split = string.split(va, '.')
-		
+
 		if split[1] == 'camControls' then
 			camControls[split[2]] = value
 		end
 	end
-	
+
 	if va == 'defaultCamZoom' then -- not efficient but loadstring is disabled by default because of exploits
 		defaultCamZoom = 1 - value
 	elseif va == 'camGame.zoom' then
@@ -346,7 +340,6 @@ local function GetColorFromHEX(hex:number)
 	local red = tonumber("0x" .. numbString:sub(1,2))
 	local green = tonumber("0x" .. numbString:sub(3,4))
 	local blue = tonumber("0x" .. numbString:sub(5,6))
-	print(red,green,blue)
 	return Color3.fromRGB(red,green,blue)
 end
 
@@ -436,7 +429,7 @@ function shakeUI(intensity, duration)
 		end
 		elapsed += RS.RenderStepped:Wait()
 	end
-	
+
 	gameUI.realGameUI.Position = UDim2.new(0.5, 0, 0.5, 0)
 end
 
@@ -446,9 +439,9 @@ function shakeScreen(intensity, duration)
 		if elapsed < duration then
 			snapCamera(offsetUI(intensity))
 		end
-		elapsed += RS.RenderStepped:Wait()
+		elapsed += HB:Wait()
 	end
-	
+
 	snapCamera(CFrame.new())
 end
 
@@ -482,7 +475,7 @@ function playSound(snd,vol)
 	game:service'Debris':AddItem(newSound,newSound.TimeLength+2)--]]
 end
 
-function addSprite(tag, imageId, pos, size)
+function addSprite(tag:Name, imageId:ImageId, pos:Position, size:Size)
 	local image = gameUI.realGameUI.Overlay:Clone()
 	local x = pos.X.Offset / ratioDiffX
 	local y = pos.Y.Offset * ratioDiffY
@@ -497,7 +490,6 @@ end
 function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	generatedSong=false
 	startedCountdown=false
-	Plr2 = plr2
 	if not module.PositioningParts.isPlayer[1] and PlayerObjects.BF then PlayerObjects.BF:Destroy() end
 	if not module.PositioningParts.isPlayer[2] and PlayerObjects.Dad then PlayerObjects.Dad:Destroy() end
 	if not module.PositioningParts.isPlayer[3] and PlayerObjects.BF2 then PlayerObjects.BF2:Destroy() end
@@ -517,7 +509,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	camControls.BehaviourType = "Separate"
 	camControls.StayOnCenter = false
 	camControls.DisableLerp = false
-	
+
 	resetGroup("Conductor")
 
 	Conductor.elapsed=0
@@ -583,12 +575,12 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	camSpeed = speedModifier
 	instrSound.PlaybackSpeed=speedModifier
 	voiceSound.PlaybackSpeed=speedModifier
-	
+
 	local sides = {"Left", "Right", "Left2", "Right2"}
 	for i = 1, #sides do
 		benginPos[i] = module.PositioningParts[sides[i]].CFrame
 	end
-	
+
 	local camSizeX = cam.ViewportSize.X 
 	local data = require(songName)--songCache[songName] or require(songs:FindFirstChild(songName) or songs.Philly)
 	if(typeof(data)=='string')then
@@ -651,7 +643,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	if(module.settings["NoteSkin_" .. DirAmmo[songData.mania] .."K"] == "Default" and typeof(SongIdInfo.NoteSkin)=='string')then
 		NoteObject = NSFolder:FindFirstChild(SongIdInfo.NoteSkin or "")
 	else
-		
+
 		NoteObject = NSFolder:FindFirstChild(module.settings["NoteSkin_" .. DirAmmo[songData.mania] .."K"])
 	end
 	if internalSettings.useDuoSkins and module.settings["NoteSkin_" .. DirAmmo[songData.mania] .."K"] ~= "Default" then
@@ -683,11 +675,11 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			NoteXml = NoteXml.Value
 		end
 	end
-	
+
 	if module.settings.noteSplashes then
 		game:GetService('ContentProvider'):PreloadAsync({'rbxassetid://11638311146'})
 	end
-	
+
 	opponentNotes={}
 	for i = 1,DirAmmo[songData.mania] do
 		noteLanes[i]={};
@@ -695,7 +687,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 		playerNoteOffsets[i] = {X=0,Y=0} -- Create a point LuaU type maybe?
 		opponentNoteOffsets[i] = {X=0,Y=0}
 	end
-	
+
 	local modchart = nil
 	if module.settings.Modcharts then
 		local childs = songName.Parent:GetChildren()
@@ -713,11 +705,11 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 				table.insert(modcharts, childs[i])
 			end
 		end
-		
+
 		modchart = SongIdInfo.Script and mods.Modcharts:FindFirstChild(SongIdInfo.Script) or mods.Modcharts:FindFirstChild(songData.song)
 		table.insert(modcharts, modchart)
 	end
-	
+
 	startingSong=true
 
 	internalSettings.autoSize = module.settings.maniaAutoSize and zoomManiaStuff[songData.mania] or 1 -- set a size depending on mania mode
@@ -790,13 +782,13 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			button.Parent = gameUI.TouchScreen
 		end
 	end
-	
+
 	module.PositioningParts.songName = songData.song
 	if SongIdInfo.PlaybackSpeed then
 		instrSound.PlaybackSpeed *= SongIdInfo.PlaybackSpeed
 		voiceSound.PlaybackSpeed *= SongIdInfo.PlaybackSpeed
 	end
-	
+
 	if SongIdInfo.mapProps and repS.Maps:FindFirstChild(SongIdInfo.mapProps) then
 		local map = repS.Maps[SongIdInfo.mapProps]
 		local Floor = module.PositioningParts.Spot:FindFirstChild('Floor')
@@ -814,7 +806,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			end
 		end
 	end
-	
+
 	local notesData = songData.notes
 	--BFNotesUI.Position = UDim2.new((-498 + (-112 * (DirAmmo[songData.mania] - 4)))  * (internalSettings.autoSize * module.settings.customSize)/workspace.CurrentCamera.ViewportSize.X,0,1,0)
 	Conductor:ChangeBPM(songData.bpm)
@@ -845,7 +837,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 				BFAssetInfo = Icons[module.settings.CustomIcon] or Icons.bf
 			end
 		end
-		
+
 		--[[if (module.PositioningParts.isOpponentAvailable~=nil) then
 			if not flipMode then
 				--module.OpponentSettings.OppIcon = DadAssetInfo
@@ -864,7 +856,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 		DadIcon.CurrAnimation = nil;
 		BFIcon.AnimData.Looped = false
 		DadIcon.AnimData.Looped = false
-		
+
 		module.changeIcon(BFChar, true)
 		module.changeIcon(DadChar, false)
 		-- models
@@ -944,16 +936,16 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			end
 		end
 		local BFOffset = CFrame.new(0,0,0)
-		
+
 		module.PositioningParts.Left2.CFrame = module.PositioningParts.Left.CFrame * CFrame.new(1.75,0,-2)
 		module.PositioningParts.Right2.CFrame = module.PositioningParts.Right.CFrame * CFrame.new(3,0,3)
-		
+
 		local offsets = {CFrame.new(), CFrame.new(), CFrame.new(), CFrame.new()}
-		
+
 		if SongIdInfo.AnimOffsets then
 			offsets = SongIdInfo.AnimOffsets
 			local sides = {"Left", "Right", "Left2", "Right2"}
-			
+
 			for i = 1, #offsets do
 				module.PositioningParts[sides[i]].CFrame *= offsets[i]
 			end
@@ -961,7 +953,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 		if SongIdInfo.BF2Animations then
 			module.PositioningParts.Left.CFrame *= CFrame.new(-1.75, 0, 0.25)
 		end
-		
+
 		-- module.PositioningParts.isPlayer:list this lists players in spot 1, 2, 3, and 4
 		if flipMode then -- Character.new(char:string,CFrame: a, isPlayer:bool, Animations, AnimationName: g, Microphone: string)
 			PlayerObjects.BF = Character.new(BFChar,module.PositioningParts.Left.CFrame,module.PositioningParts.isPlayer[1],BFAnimations,BFAnim.Name,BFAnimations.Microphone, speedModifier) -- Opponent character as BF
@@ -1043,7 +1035,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	if PlayerObjects.Dad2 then
 		PlayerObjects.Dad2:ToggleAnimatorScript(false)
 	end
-	
+
 	-- set the UI up
 	if module.settings.MiddleScroll then
 		DadNotesUI.Visible = false
@@ -1100,7 +1092,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 		flipMode = not flipMode
 	end]]
 	-- Attributes stuff
-	
+
 	for Name,Value in next,songName:GetAttributes() do
 		if attributeFunctions[Name] then
 			attributeFunctions[Name](Value)
@@ -1117,7 +1109,6 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			defaultcamzoom=1 + defaultCamZoom;
 			p1 = (flipMode and PlayerObjects.BF or PlayerObjects.Dad);
 			p2 = (flipMode and PlayerObjects.Dad or PlayerObjects.BF);
-			p3 = (flipMode and PlayerObjects.BF2 or PlayerObjects.Dad2);
 			dad=PlayerObjects.Dad;
 			dad2=PlayerObjects.Dad2;
 			bf=PlayerObjects.BF;
@@ -1143,7 +1134,6 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			initialSpeed=initialSpeed;
 			mapProps=mapProps;
 			playbackRate=speedModifier;
-			ratio={X=ratioDiffX, Y=ratioDiffY, All=ratioDiff};
 			addSprite=addSprite;
 		}
 		for i = 1, #modcharts do
@@ -1313,39 +1303,39 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 						songNotes[1];
 						{{songNotes[3], unpack(songNotes,4)}};
 					}
-					
+
 					if #events > 0 then
 						events[1]["song"]["events"][#events[1]["song"]["events"]+1] = eventData
 					else
 						table.insert(events, {song = {events = {eventData}}})
 					end
-					
+
 				end
 			end
 		end
 	end
-	
+
 	if repS.Modules.Modcharts:FindFirstChild(songData.song) then
 		if repS.Modules.Modcharts[songData.song]:FindFirstChild("event") then
 			local thing = require(repS.Modules.Modcharts[songData.song].event)
 			table.insert(events, HS:JSONDecode(thing))
 		end
 	end
-	
+
 	if songName:FindFirstChild("event") then
 		local thing = require(songName.event)
 		table.insert(events, HS:JSONDecode(thing))
 	end
-	
+
 	local processEvent = function (event, value1, value2,...)
 		local curEvent = typeof(event) == "table" and string.lower(event[1]) or string.lower(event)
-		
+
 		for i = 1, #loadedModchartData do
 			if loadedModchartData[i].EventTrigger then
 				loadedModchartData[i].EventTrigger(curEvent, value1, value2, ...)
 			end
 		end
-		
+
 		if curEvent == "set camera zoom" then
 			--camControls.BehaviourType = "Camera"
 			--camControls.BehaviourType = "Separate"
@@ -1368,6 +1358,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			CameraTween.Completed:Connect(function()
 				defaultCamZoom = camZoom
 				camControls.hudZoom = camZoom
+				CameraTween = nil
 			end)
 			return CameraTween
 		elseif curEvent == "add camera zoom" then
@@ -1400,7 +1391,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 					value2 = '#FFFFFF'
 				end
 				local speed = tonumber(value1) or 1
-				module.flash(value2,speed,0)
+				module.flash(tostring(value2),speed,0)
 			end
 		elseif curEvent == "screen shake" then -- supposed to shake UI as well
 			--print("screen shaked at "..value1.." intensity for "..value2.." seconds") value1 can either be one number or two numbers separated by a comma
@@ -1420,18 +1411,18 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 				value2 = tonumber(value2)
 				value1 = tonumber(value1)
 			end
-			
+
 			local duration = tonumber(value1)/speedModifier or 0
 			local intensity = tonumber(value2)*1000 or 0
 			local dur2 = tonumber(split2[1])/speedModifier or 0
 			local inten2 = camSizeX*tonumber(split2[2]) or 0
-			
+
 			if duration > 0 and intensity ~= 0 then
 				spawn(function()
 					shakeScreen(intensity, duration)
 				end)
 			end
-			
+
 			if dur2 > 0 and inten2 ~= 0 then
 				spawn(function()
 					shakeUI(inten2, dur2)
@@ -1472,24 +1463,16 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			end
 		elseif curEvent == "change scroll speed" then --['Change Scroll Speed', "Value 1: Scroll Speed Multiplier (1 is default)\nValue 2: Time it takes to change fully in seconds."],
 			if not module.settings.ForceSpeed then
-				if scrollSpeedChanging then
-					if coroutine.status(ScrollSpeedThread) == "suspended" then
-						task.cancel(ScrollSpeedThread)
-					end
-				end
 				local oldSpeed = initialSpeed
 				local speed = tonumber(value1) or 1
 				local duration = (tonumber(value2) or 0)/speedModifier
 				local newSpeed = (module.settings.CustomSpeed * speed)
 				local songSpeedTween = ((initialSpeed/.45)/songData.speed) * module.settings.CustomSpeed
 				local elapsed = 0
-				local loops = 0
 				if duration <= 0 then
 					initialSpeed = songData.speed * .45 * newSpeed--newSpeed
 				else
-					scrollSpeedChanging = true
-					ScrollSpeedThread = task.spawn(function()
-						local loops = 0
+					spawn(function()
 						while elapsed < duration and not songEnded do
 							songSpeedTween = numLerp(songSpeedTween, newSpeed, elapsed / duration)
 							initialSpeed = (songData.speed * .45 * songSpeedTween)
@@ -1501,7 +1484,6 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 							end
 							elapsed += RS.RenderStepped:Wait()
 						end
-						scrollSpeedChanging = false
 					end)
 				end
 			end
@@ -1516,7 +1498,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	table.sort(unspawnedNotes,function(a,b)
 		return a.StrumTime<b.StrumTime
 	end)
-	
+
 	if SongIdInfo.PreloadImages then
 		game:GetService('ContentProvider'):PreloadAsync(SongIdInfo.PreloadImages, function()
 			LoadingStatus.PreloadedImages+=1
@@ -1628,6 +1610,9 @@ function module.changeIcon(name,side) -- false:dad  true:bf
 		DadIcon.AnimData.Looped = false
 		if DadAssetInfo.NormalXMLArgs then
 			DadIcon:AddSparrowXML(DadAssetInfo.NormalXMLArgs[1],"Alive",unpack(DadAssetInfo.NormalXMLArgs,2)).ImageId = DadAssetInfo.NormalId
+			for i = 1, #DadIcon.Animations.Alive.Frames do
+				DadIcon.Animations.Alive.Frames[i].FrameSize = DadAssetInfo.NormalDimensions
+			end
 		else
 			DadIcon:AddAnimation("Alive",{{
 				Size = DadAssetInfo.NormalDimensions;
@@ -1638,8 +1623,14 @@ function module.changeIcon(name,side) -- false:dad  true:bf
 		-- Dead
 		if DadAssetInfo.DeadXMLArgs then
 			DadIcon:AddSparrowXML(DadAssetInfo.DeadXMLArgs[1],"Dead",unpack(DadAssetInfo.DeadXMLArgs,2)).ImageId = DadAssetInfo.DeadId
+			for i = 1, #DadIcon.Animations.Dead.Frames do
+				DadIcon.Animations.Dead.Frames[i].FrameSize = DadAssetInfo.DeadDimensions
+			end
 		elseif DadAssetInfo.NormalXMLArgs then
 			DadIcon:AddSparrowXML(DadAssetInfo.NormalXMLArgs[1],"Dead",unpack(DadAssetInfo.NormalXMLArgs,2)).ImageId = DadAssetInfo.NormalId
+			for i = 1, #DadIcon.Animations.Dead.Frames do
+				DadIcon.Animations.Dead.Frames[i].FrameSize = DadAssetInfo.NormalDimensions
+			end
 		else
 			DadIcon:AddAnimation("Dead",{{
 				Size = (DadAssetInfo.DeadDimensions or DadAssetInfo.NormalDimensions);
@@ -1650,8 +1641,14 @@ function module.changeIcon(name,side) -- false:dad  true:bf
 		-- Winning
 		if DadAssetInfo.WinningXMLArgs then
 			DadIcon:AddSparrowXML(DadAssetInfo.WinningXMLArgs[1],"Winning",unpack(DadAssetInfo.WinningXMLArgs,2)).ImageId = DadAssetInfo.WinningId
+			for i = 1, #DadIcon.Animations.Winning.Frames do
+				DadIcon.Animations.Winning.Frames[i].FrameSize = DadAssetInfo.WinningDimensions
+			end
 		elseif DadAssetInfo.NormalXMLArgs then
 			DadIcon:AddSparrowXML(DadAssetInfo.NormalXMLArgs[1],"Winning",unpack(DadAssetInfo.NormalXMLArgs,2)).ImageId = DadAssetInfo.NormalDimensions
+			for i = 1, #DadIcon.Animations.Winning.Frames do
+				DadIcon.Animations.Winning.Frames[i].FrameSize = DadAssetInfo.NormalDimensions
+			end
 		else
 			DadIcon:AddAnimation("Winning",{{
 				Size = (DadAssetInfo.WinningDimensions or DadAssetInfo.NormalDimensions);
@@ -1670,6 +1667,9 @@ function module.changeIcon(name,side) -- false:dad  true:bf
 		BFIcon.AnimData.Looped = false
 		if BFAssetInfo.NormalXMLArgs then
 			BFIcon:AddSparrowXML(BFAssetInfo.NormalXMLArgs[1],"Alive",unpack(BFAssetInfo.NormalXMLArgs,2)).ImageId = BFAssetInfo.NormalId
+			for i = 1, #BFIcon.Animations.Alive.Frames do
+				BFIcon.Animations.Alive.Frames[i].FrameSize = BFAssetInfo.NormalDimensions
+			end
 		else
 			BFIcon:AddAnimation("Alive",{{
 				Size = BFAssetInfo.NormalDimensions;
@@ -1680,8 +1680,14 @@ function module.changeIcon(name,side) -- false:dad  true:bf
 		-- Dead
 		if BFAssetInfo.DeadXMLArgs then
 			BFIcon:AddSparrowXML(BFAssetInfo.DeadXMLArgs[1],"Dead",unpack(BFAssetInfo.DeadXMLArgs,2)).ImageId = BFAssetInfo.DeadId
+			for i = 1, #BFIcon.Animations.Dead.Frames do
+				BFIcon.Animations.Dead.Frames[i].FrameSize = BFAssetInfo.NormalDimensions
+			end
 		elseif BFAssetInfo.NormalXMLArgs then
 			BFIcon:AddSparrowXML(BFAssetInfo.NormalXMLArgs[1],"Dead",unpack(BFAssetInfo.NormalXMLArgs,2)).ImageId = BFAssetInfo.NormalId
+			for i = 1, #BFIcon.Animations.Dead.Frames do
+				BFIcon.Animations.Dead.Frames[i].FrameSize = BFAssetInfo.NormalDimensions
+			end
 		else
 			BFIcon:AddAnimation("Dead",{{
 				Size = (BFAssetInfo.DeadDimensions or BFAssetInfo.NormalDimensions);
@@ -1692,8 +1698,14 @@ function module.changeIcon(name,side) -- false:dad  true:bf
 		-- Winning
 		if BFAssetInfo.WinningXMLArgs then
 			BFIcon:AddSparrowXML(BFAssetInfo.WinningXMLArgs[1],"Winning",unpack(BFAssetInfo.WinningXMLArgs,2)).ImageId = BFAssetInfo.WinningId
+			for i = 1, #BFIcon.Animations.Winning.Frames do
+				BFIcon.Animations.Winning.Frames[i].FrameSize = BFAssetInfo.WinningDimensions
+			end
 		elseif BFAssetInfo.NormalXMLArgs then
 			BFIcon:AddSparrowXML(BFAssetInfo.NormalXMLArgs[1],"Winning",unpack(BFAssetInfo.NormalXMLArgs,2)).ImageId = BFAssetInfo.WinningId
+			for i = 1, #BFIcon.Animations.Winning.Frames do
+				BFIcon.Animations.Winning.Frames[i].FrameSize = BFAssetInfo.NormalDimensions
+			end
 		else
 			BFIcon:AddAnimation("Winning",{{
 				Size = (BFAssetInfo.WinningDimensions or BFAssetInfo.NormalDimensions);
@@ -1716,13 +1728,13 @@ function module.changeAnimation(name,player,speed,looped,force)
 		local needsProps = Animation:GetAttribute("CharacterName")
 		local props
 		local micName
-		
+
 		if needsProps and repS.Characters[needsProps] then
 			props = needsProps
 		end
-		
+
 		player.AnimName = Animation.Name
-		
+
 		local animTable = {
 			Offset = CFrame.new();
 			MicPositioning = {};-- Can be an object as well.
@@ -1743,15 +1755,15 @@ function module.changeAnimation(name,player,speed,looped,force)
 				animTable[AnimObj.Name] = string.sub(AnimObj.AnimationId,14)
 			end
 		end
-		
+
 		if player.IsPlayer then
 			player.MicPositions = animTable.MicPositioning
 		end
-		
+
 		for _,Track in next,player.Animator:GetPlayingAnimationTracks() do
 			Track:Stop(0)
 		end
-		
+
 		if(animTable.DanceLeft and animTable.DanceRight)then
 			player.BeatDancer=true;
 			player:AddAnimation("danceLeft",animTable["DanceLeft"],speedModifier,true,Enum.AnimationPriority.Idle)
@@ -1759,7 +1771,7 @@ function module.changeAnimation(name,player,speed,looped,force)
 		else
 			player:AddAnimation("idle",animTable["Idle"],speedModifier,true,Enum.AnimationPriority.Idle)
 		end
-		
+
 		player:AddAnimation("singDOWN",animTable["SingDown"],speedModifier,false,Enum.AnimationPriority.Movement)
 		player:AddAnimation("singLEFT",animTable["SingLeft"],speedModifier,false,Enum.AnimationPriority.Movement)
 		player:AddAnimation("singRIGHT",animTable["SingRight"],speedModifier,false,Enum.AnimationPriority.Movement)
@@ -1771,7 +1783,7 @@ function module.changeAnimation(name,player,speed,looped,force)
 				player:AddAnimation(name:lower(),id,speedModifier,false,Enum.AnimationPriority.Movement)
 			end
 		end
-		
+
 		if animTable.MicPositioning ~= nil then
 			player.Obj:FindFirstChild("Default"):Destroy()
 			local Mic = game:GetService("ReplicatedStorage").Assets.Microphones:FindFirstChild(micName or "Default") or game:GetService("ReplicatedStorage").Assets.Microphones.Default
@@ -1815,13 +1827,6 @@ local function eventNoteEarlyTrigger(eventNote)
 			return returnedValue;
 		end
 	end
-	Switch()
-	:default(function()
-		return 0
-	end)
-	:case('Kill Henchmen',function()
-		return 200
-	end)(eventNote[2][1][1])
 	return 0
 end
 
@@ -1850,11 +1855,21 @@ local loadEvents = function()
 			local song = events[n].song
 			local loop = song.events ~= nil and song.events or song.notes or songData.notes
 			for i,event in pairs(loop) do
-				if event then
+				if type(event[1]) ~= "number" then
+					--local eve = event.sectionNotes -- uncommit this part if it works...
+					--for i = 1, #eve do
+					--	local eary = eventNoteEarlyTrigger(eve[i])
+					--	if eary~=nil then eve[i][1] -= eary end
+					--end
+					
+					
+					--warn("How did this get here?", event)
+					--table.remove(loop, event)
+				else
 					local eary = eventNoteEarlyTrigger(event)
 					if eary~=nil then event[1] -= eary end
-				else
-					warn("Try moving the events to be inside the 'events' array")
+				end
+				--warn("Try moving the events to be inside the 'events' array")
 					--[[task.spawn(function()
 						event[1] -= eventNoteEarlyTrigger(event)
 						repeat task.wait() until (event[1] + Conductor.safeZoneOffset + module.settings.ChartOffset + (SongIdInfo.Offset or 0) <= Conductor.SongPos) or not generatedSong
@@ -1864,7 +1879,6 @@ local loadEvents = function()
 							module.processEvent(event[2][i],event[2][i][2],event[2][i][3]);
 						end
 					end)]]
-				end
 			end
 			table.move(loop, 1, #loop, #eventNotes + 1, eventNotes)
 		end
@@ -1872,19 +1886,19 @@ local loadEvents = function()
 	table.sort(eventNotes, function(a,b)
 		return a[1] < b[1]
 	end)
-	
+	print(#eventNotes)
 	print('Events Loaded')
 end
 
 function checkEventNote()
 	while(#eventNotes > 0)do 
-		local offset =  Conductor.safeZoneOffset + module.settings.ChartOffset + (SongIdInfo.Offset or 0)
+		local offset =  Conductor.safeZoneOffset + module.settings.ChartOffset + (SongIdInfo.EventOffset or 0)
 		for i = 1, #eventNotes do
 			local Time = eventNotes[i][1]
 			if(Conductor.SongPos < Time + offset)then
 				return
 			end
-			
+
 			local name = ''
 			local value1 = ''
 			local value2 = ''
@@ -2050,7 +2064,7 @@ end
 
 function module.startCountdown(customIcon)
 	--TS:Create(cam, TweenInfo.new(2.5/speedModifier,Enum.EasingStyle.Quad,Enum.EasingDirection.InOut),{FieldOfView = 70-(defaultCamZoom*25)}):Play()
-	
+
 	if SongIdInfo.mapProps and repS.Maps:FindFirstChild(SongIdInfo.mapProps) then
 		mapProps.Parent = workspace.Maps
 	end
@@ -2173,7 +2187,7 @@ function module.startCountdown(customIcon)
 		local Dad2IdleTrack = PlayerObjects.Dad2:GetAnimationTrack("idle")
 	end
 	local Dad2IdleTrack,BF2IdleTrack
-	customScoreFormat = module.settings.CustomScoreFormat
+	--customScoreFormat = module.settings.CustomScoreFormat
 	--[[local DadBPMSpeed = DadIdleTrack.Length/(60/Conductor.BPM) /2
 	DadIdleTrack:AdjustSpeed(DadBPMSpeed ~= huge and DadBPMSpeed or 1)
 	local BFBPMSpeed = BFIdleTrack.Length/(60/Conductor.BPM) /2
@@ -2188,7 +2202,7 @@ function module.startCountdown(customIcon)
 	-- ^ THIS IS DUMB!
 	-- WHY WOULD YOU DO THIS!?
 	-- JUST RUINS THEM
-	
+
 	if PlayerObjects.Dad then PlayerObjects.Dad:Dance() end
 	if PlayerObjects.BF then PlayerObjects.BF:Dance() end
 	if SongIdInfo.BF2Animations then
@@ -2203,26 +2217,22 @@ function module.startCountdown(customIcon)
 			loadedModchartData[i].preStart()
 		end
 	end
+
+	IntroSounds[1].SoundId = "rbxassetid://6532958901";
+	IntroSounds[2].SoundId = "rbxassetid://6532959822";
+	IntroSounds[3].SoundId = "rbxassetid://6532960894";
+	IntroSounds[4].SoundId = "rbxassetid://6532961544";
 	if SongIdInfo.IntroSounds then
 		IntroSounds[1].SoundId = SongIdInfo.IntroSounds[1]
 		IntroSounds[2].SoundId = SongIdInfo.IntroSounds[2]
 		IntroSounds[3].SoundId = SongIdInfo.IntroSounds[3]
 		IntroSounds[4].SoundId = SongIdInfo.IntroSounds[4]
-	elseif SongIdInfo.IntroSounds == false then
-		IntroSounds[1].SoundId = "rbxassetid://6766230018"
-		IntroSounds[2].SoundId = "rbxassetid://6766230018"
-		IntroSounds[3].SoundId = "rbxassetid://6766230018"
-		IntroSounds[4].SoundId = "rbxassetid://6766230018"
-	else
-		IntroSounds[1].SoundId = "rbxassetid://6532958901";
-		IntroSounds[2].SoundId = "rbxassetid://6532959822";
-		IntroSounds[3].SoundId = "rbxassetid://6532960894";
-		IntroSounds[4].SoundId = "rbxassetid://6532961544";
 	end
 	for i = 1,4 do
 		delay(((Conductor.crochet/1000)*i)/speedModifier,function()
-
-			IntroSounds[i]:Play()
+			if SongIdInfo.IntroSounds ~= false then
+				IntroSounds[i]:Play()
+			end
 			if(countdownImages[i]~=0)then
 				local img =Instance.new("ImageLabel")
 				img.Image='rbxassetid://' .. countdownImages[i]
@@ -2314,23 +2324,23 @@ function module.endSong()
 		module.settings.SongScores
 	}
 	InfoRetriever:InvokeServer(0x2,cloneData)]]
-	
+
 	shared.songData=nil;
 	shared.song=nil;
 	shared.songSpeed=0;
 	speedModifier = 1;
-	
+
 	if CameraTween then
 		CameraTween:Cancel()
 	end
-	
+
 	for i = 1, #loadedModchartData do
 		if loadedModchartData[i].cleanUp then
 			loadedModchartData[i].cleanUp()
 		end
 	end
-	
-	
+
+
 	--print(module.PositioningParts)
 	local sides = {"Left", "Right", "Left2", "Right2"}
 	for i = 1, #sides do
@@ -2338,8 +2348,7 @@ function module.endSong()
 			module.PositioningParts[sides[i]].CFrame = benginPos[i]
 		end
 	end
-	
-	scrollSpeedChanging = false
+
 	generatedSong=false
 	events = {}
 	eventNotes = {}
@@ -2348,24 +2357,24 @@ function module.endSong()
 	boomSpeed = 4
 	camSpeed = 1
 	defaultCamZoom = .05
-	
+
 	resetGroup("Map")
-	
+
 	isCameraOnForcedPos = false
 	instrSound.TimePosition = 0
 	voiceSound.TimePosition = 0
 	camZooming = true
-	
+
 	instrSound:Stop()
 	voiceSound:Stop()
 	game.Lighting.ClockTime = defaultClockTime
-	
+
 	resetGroup("UI")
-	
+
 	resetGroup("Conductor")
-	
+
 	pcall(KillclientAnims)
-	customScoreFormat = ""
+	--customScoreFormat = ""
 	for _,button in next,gameUI.TouchScreen:GetChildren() do
 		UserInputBind.RemoveBind(button)
 		button:Destroy()
@@ -2386,9 +2395,9 @@ function module.endSong()
 	end
 	--2.Character:FindFirstChild("HumanoidRootPart").Anchored = false
 	resetGroup("PositioningParts")
-	
+
 	bindNameDir = {}
-	
+
 	cam.CameraType = Enum.CameraType.Custom
 	cam.FieldOfView = 70
 	flipMode = nil
@@ -2397,7 +2406,7 @@ function module.endSong()
 	if PlayerObjects.Dad then PlayerObjects.Dad:Destroy() end
 	if PlayerObjects.BF2 then PlayerObjects.BF2:Destroy() end
 	if PlayerObjects.Dad2 then PlayerObjects.Dad2:Destroy() end
-	
+
 	return {benginPos[1], benginPos[2], benginPos[3], benginPos[4]}
 end
 
@@ -2405,9 +2414,9 @@ function module.startSong()
 	startingSong=false
 
 	instrSound:Resume()
-	
+
 	resetGroup("Conductor")
-	
+
 	if(songData.needsVoices)then
 		voiceSound:Resume()
 	end
@@ -2430,6 +2439,10 @@ local fogCount = 0
 local fogDrain = 0
 
 function module.flash(hex,speed,int)
+	if type(hex) == "number" then
+		warn("Cannot perform Camera Flash if hex value is not valid!")
+		return
+	end
 	local frame = gameUI.realGameUI.Flash
 	frame.BackgroundTransparency = int or 0
 	frame.BackgroundColor3 = Color3.fromHex(hex)
@@ -2470,33 +2483,101 @@ function GoodHit(daNote)
 	local noteType = daNote.Type
 	if(not daNote.IsSustain)then
 		if noteType ~= "None" then
-			--[[if daNote.Type == "Bone" then
-			bonedCount += 1
-			gameUI.realGameUI.Dust.ImageTransparency = 1 - (bonedCount / 10)
-			playSound("rbxassetid://4735718618",4)
-			if bonedCount >= 10 then
-				module.Kill()
-			end
-			local thread = function()
-				local effectRunout = tick() + 35
-				repeat
-					RS.RenderStepped:Wait()
-				until tick() > effectRunout or not generatedSong
-				bonedCount -= 1
-				gameUI.realGameUI.Dust.ImageTransparency = 1 - (bonedCount / 10)
-			end
-			thread = coroutine.create(thread) 
-			coroutine.resume(thread)
-			if daNote.Destroy then daNote:Destroy() end	
-			return
-		--[[elseif noteType == "Knife" then
-			module.flash("ff3030",0.4)
-			playSound(5810686185,2)
-			module.PlayerStats.Health-=1
-		]]
-			if noteType == "Bullet" then
-				PlayerObjects.BF:PlayAnimation("dodge")
-			elseif noteType == "kill" then
+			--if daNote.Type == "Bone" then
+			--	bonedCount += 1
+			--	gameUI.realGameUI.Dust.ImageTransparency = 1 - (bonedCount / 10)
+			--	playSound("rbxassetid://4735718618",4)
+			--	if bonedCount >= 10 then
+			--		module.Kill()
+			--	end
+			--	local thread = function()
+			--		local effectRunout = tick() + 35
+			--		repeat
+			--			RS.RenderStepped:Wait()
+			--		until tick() > effectRunout or not generatedSong
+			--		bonedCount -= 1
+			--		gameUI.realGameUI.Dust.ImageTransparency = 1 - (bonedCount / 10)
+			--	end
+			--	thread = coroutine.create(thread) 
+			--	coroutine.resume(thread)
+			--	if daNote.Destroy then daNote:Destroy() end	
+			--	return
+			--elseif noteType == "Knife" then
+			--	module.flash("ff3030",0.4)
+			--	playSound(5810686185,2)
+			--	module.PlayerStats.Health-=1
+			--elseif noteType == "Bullet" then
+			--	PlayerObjects.BF:PlayAnimation("dodge")
+			--elseif noteType == "BloodyKnife" then
+			--	module.flash("ff3030",0.4)
+			--	playSound(5810686185,2)
+			--elseif noteType == "Gem" then
+			--	module.PlayerStats.Health += 0.02
+			--elseif noteType == "Trap" then
+			--	local thread = function()
+			--		local healthDrained = 0
+			--		repeat
+			--			local delta = RS.RenderStepped:Wait()
+			--			local drainAmount = (6/1250) * (delta / (1/60))
+			--			module.PlayerStats.Health -= drainAmount
+			--			healthDrained += drainAmount
+			--		until healthDrained > 1 or not generatedSong
+			--	end
+			--	thread = coroutine.create(thread) 
+			--	coroutine.resume(thread)
+			--	if daNote.Destroy then daNote:Destroy() end	
+			--	return
+			--elseif daNote.Type == "phantom" then
+			--	local function doTrans()
+			--		if phantomActive == false then
+			--			phantomActive = true
+			--			local opacity = 0
+			--			wait()
+			--			repeat
+			--				local delta = RS.RenderStepped:Wait()
+			--				opacity += 0.01 * (delta/(1/60))
+			--				setGameUITransparency(opacity)
+			--			until opacity >= 0.95
+			--			opacity = 0.95 -- in case it goes above the mark
+			--			setGameUITransparency(opacity)
+
+			--			phantomActive = tick() + 10
+			--			repeat
+			--				RS.RenderStepped:Wait()
+			--			until tick() > phantomActive
+			--			repeat
+			--				local delta = RS.RenderStepped:Wait()
+			--				opacity -= 0.01 * (delta/(1/60))
+			--				setGameUITransparency(opacity)
+			--			until opacity <= 0
+			--			opacity = 0
+			--			setGameUITransparency(opacity)
+			--			phantomActive = false
+			--		end
+			--	end
+			--	local wrappedThread = coroutine.wrap(doTrans)
+			--	wrappedThread()
+			--	playSound("rbxassetid://7757747076",2)
+			--	if daNote.Destroy then daNote:Destroy() end	
+			--	return
+			--elseif daNote.Type == "Karma" then
+			--	local thread = function()
+			--		local healthDrained = 0
+			--		repeat
+			--			HPBarG.BackgroundColor3 = Color3.new(1, 0, 0.701961)
+			--			local delta = RS.RenderStepped:Wait()
+			--			local drainAmount = (2/1250) * (delta / (1/60))
+			--			module.PlayerStats.Health -= drainAmount
+			--			healthDrained += drainAmount
+			--		until healthDrained > 0.5 or not generatedSong
+			--		HPBarG.BackgroundColor3 = Color3.fromRGB(102, 255, 51)
+			--	end
+			--	thread = coroutine.create(thread) 
+			--	coroutine.resume(thread)
+			--	if daNote.Destroy then daNote:Destroy() end	
+			--	return
+			--end
+			if noteType == "kill" then
 				if module.settings.DeathEnabled then
 					module.Kill()
 					playSound(11003930474,2)
@@ -2504,83 +2585,6 @@ function GoodHit(daNote)
 					module.PlayerStats.Health-=1
 					module.PlayerStats.Score-=13500;
 				end
-
-			--[[elseif noteType == "BloodyKnife" then
-				module.flash("ff3030",0.4)
-				playSound(5810686185,2)
-			]]
-			--[[elseif noteType == "Power" then
-				--module.ScreenShake(12,0.1,10)
-				--gameUI.realGameUI.Notes.Darkness.ImageTransparency = gameUI.realGameUI.Notes.Darkness.ImageTransparency+0.6
-			]]
-			elseif noteType == "Gem" then
-				module.PlayerStats.Health += 0.02
-			--[[elseif noteType == "Trap" then
-				local thread = function()
-					local healthDrained = 0
-					repeat
-						local delta = RS.RenderStepped:Wait()
-						local drainAmount = (6/1250) * (delta / (1/60))
-						module.PlayerStats.Health -= drainAmount
-						healthDrained += drainAmount
-					until healthDrained > 1 or not generatedSong
-				end
-				thread = coroutine.create(thread) 
-				coroutine.resume(thread)
-				if daNote.Destroy then daNote:Destroy() end	
-				return
-			]]
-			elseif daNote.Type == "phantom" then
-				local function doTrans()
-					if phantomActive == false then
-						phantomActive = true
-						local opacity = 0
-						wait()
-						repeat
-							local delta = RS.RenderStepped:Wait()
-							opacity += 0.01 * (delta/(1/60))
-							setGameUITransparency(opacity)
-						until opacity >= 0.95
-						opacity = 0.95 -- in case it goes above the mark
-						setGameUITransparency(opacity)
-
-						phantomActive = tick() + 10
-						repeat
-							RS.RenderStepped:Wait()
-						until tick() > phantomActive
-						repeat
-							local delta = RS.RenderStepped:Wait()
-							opacity -= 0.01 * (delta/(1/60))
-							setGameUITransparency(opacity)
-						until opacity <= 0
-						opacity = 0
-						setGameUITransparency(opacity)
-						phantomActive = false
-					end
-				end
-				local wrappedThread = coroutine.wrap(doTrans)
-				wrappedThread()
-				playSound("rbxassetid://7757747076",2)
-				if daNote.Destroy then daNote:Destroy() end	
-				return
-			--[[elseif daNote.Type == "Karma" then
-				local thread = function()
-					local healthDrained = 0
-					repeat
-						HPBarG.BackgroundColor3 = Color3.new(1, 0, 0.701961)
-						local delta = RS.RenderStepped:Wait()
-						local drainAmount = (2/1250) * (delta / (1/60))
-						module.PlayerStats.Health -= drainAmount
-						healthDrained += drainAmount
-					until healthDrained > 0.5 or not generatedSong
-					HPBarG.BackgroundColor3 = Color3.fromRGB(102, 255, 51)
-				end
-				thread = coroutine.create(thread) 
-				coroutine.resume(thread)
-				if daNote.Destroy then daNote:Destroy() end	
-				return
-			end
-			]]
 			end
 		end
 		if(module.settings.HitSound)then
@@ -2805,14 +2809,14 @@ function ScorePopup(noteDiff, note)
 			elseif SongIdInfo.NoteSplashSkin ~= nil then
 				texture = SongIdInfo.NoteSplashSkin
 			end
-			if repS.Modules.Assets["noteSkins"..DirAmmo[songData.mania].."K"]:FindFirstChild(texture or 'noteSplashes') or texture:IsA("ImageLabel") and not (note.NoteSplashSkin == "None") then
+			if repS.Modules.Assets["noteSkins"..DirAmmo[songData.mania].."K"]:FindFirstChild(texture) or type(texture) ~= "string" and not (note.NoteSplashSkin == "None") then
 				local obj2
 				if typeof(texture) == "string" then
 					obj2 = repS.Modules.Assets["noteSkins"..DirAmmo[songData.mania].."K"][texture]:Clone()
 				elseif texture:IsA("ImageLabel") then
 					obj2 = texture:Clone()
 				end
-				
+
 				local scale = obj2:GetAttribute('scale') or 1.85
 				local xml = obj2.XML
 
@@ -2852,7 +2856,7 @@ function ScorePopup(noteDiff, note)
 				splash.DefaultY = Conductor.Downscroll and defaultScreenSize.Y - 80 or 50
 
 				obj2.Parent=(flipMode and DadNotesUI or BFNotesUI)
-				
+
 				splash.Alpha = playerStrums[id].Alpha
 
 				splash:SetPosition(playerStrums[id].X,playerStrums[id].Y)
@@ -3042,23 +3046,23 @@ function module.handleHit(strum,noteDiff,noteType,noteDir,sussy) -- this is what
 	local char
 	for i = 1,#opponentNotes do
 		local note= opponentNotes[i]
-			if(note.StrumTime==strum and note.NoteData==noteDir)then
-				if note.dType ~= 0 then
-					if note.dType == 1 then
-						char = (not flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2)
-					elseif note.dType == 2 then
-						char = note.NoteData <= 3 and (not flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2)
-					end
-				elseif note.bro ~= 0 then
-					if note.bro == 1 then
-						char = (not flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2)
-					elseif note.bro == 2 then
-						char = note.NoteData <= 3 and (not flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2)
-					elseif note.bro == 3 then
-						char = (not flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2)
-					end
-				else
-					char = (not flipMode and PlayerObjects.Dad or PlayerObjects.BF)
+		if(note.StrumTime==strum and note.NoteData==noteDir)then
+			if note.dType ~= 0 then
+				if note.dType == 1 then
+					char = (not flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2)
+				elseif note.dType == 2 then
+					char = note.NoteData <= 3 and (not flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2)
+				end
+			elseif note.bro ~= 0 then
+				if note.bro == 1 then
+					char = (not flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2)
+				elseif note.bro == 2 then
+					char = note.NoteData <= 3 and (not flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2)
+				elseif note.bro == 3 then
+					char = (not flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2)
+				end
+			else
+				char = (not flipMode and PlayerObjects.Dad or PlayerObjects.BF)
 			end
 			char:PlayAnimation("sing" .. sDir[note.NoteData+1],true)
 			note:Destroy()
@@ -3158,44 +3162,40 @@ function MissNote(note)
 			end
 		end
 		if note.Type ~= "None" then
-			--[[if "Knife" then
-				PlayerObjects.BF:PlayAnimation("dodge")
-				rates.miss-=1
-				module.PlayerStats.Health+=0.075
-			]]
-			--[[elseif note.Type == "BloodyKnife" then
-				PlayerObjects.BF:PlayAnimation("dodge")
-			]]
-			if note.Type == 'MattCaution' or note.Type == "Spam" then
-				if module.settings.DeathEnabled then
-					module.Kill()
-					playSound(11003995387,2)
-				else
-					module.PlayerStats.Health-=1
-					module.PlayerStats.Score-=13500;
-				end
-			elseif note.Type == "Bullet" and note.NoteGroup == "BlackBetrayal" then
-				module.PlayerStats.Health-=1
-		--[[elseif note.Type == "Static" then
-			module.PlayerStats.Health-=(2/5)
-			local object = gameUI.realGameUI.OverlaySprite
-			local static = Sprite.new(object,true,1,true)
-			object.Image = "rbxassetid://11089800126"
-			object.Visible = true
-			local xml = game.ReplicatedStorage.Modules.Assets.MiscXML["hitStatic.xml"]
-			static:AddSparrowXML(xml,"shabam","staticANIMATION",24,false,8).ImageId = "rbxassetid://11089800126"
-			static.GUI.Visible = true
-			static:PlayAnimation("shabam")
-			local MATH = random(1,2)
-			if MATH == 1 then
-				playSound(11090112135,2)
-			else
-				playSound(11090114488,2)
-			end]]
-			else
-				module.PlayerStats.Health-=.075;
-				module.PlayerStats.Score-=50;
-			end
+			--if note.Type == "Knife" then
+			--	PlayerObjects.BF:PlayAnimation("dodge")
+			--	rates.miss-=1
+			--	module.PlayerStats.Health+=0.075
+			--elseif note.Type == "BloodyKnife" then
+			--	PlayerObjects.BF:PlayAnimation("dodge")
+			--elseif note.Type == 'MattCaution' or note.Type == "Spam" then
+			--	if module.settings.DeathEnabled then
+			--		module.Kill()
+			--		playSound(11003995387,2)
+			--	else
+			--		module.PlayerStats.Health-=1
+			--		module.PlayerStats.Score-=13500;
+			--	end
+			--elseif note.Type == "Bullet" and note.NoteGroup == "BlackBetrayal" then
+			--	module.PlayerStats.Health-=1
+			--elseif note.Type == "Static" then
+			--	module.PlayerStats.Health-=(2/5)
+			--	local object = gameUI.realGameUI.OverlaySprite
+			--	local static = Sprite.new(object,true,1,true)
+			--	object.Image = "rbxassetid://11089800126"
+			--	object.Visible = true
+			--	local xml = game.ReplicatedStorage.Modules.Assets.MiscXML["hitStatic.xml"]
+			--	static:AddSparrowXML(xml,"shabam","staticANIMATION",24,false,8).ImageId = "rbxassetid://11089800126"
+			--	static.GUI.Visible = true
+			--	static:PlayAnimation("shabam")
+			--	local MATH = random(1,2)
+			--	if MATH == 1 then
+			--		playSound(11090112135,2)
+			--	else
+			--		playSound(11090114488,2)
+			--	end
+			module.PlayerStats.Health-=.075;
+			module.PlayerStats.Score-=50;
 		end
 		if(songData.needsVoices)then
 			voiceSound.Volume = 0
@@ -3247,7 +3247,6 @@ UserInputBind.InputEvents.Began:Connect(function(BindName,io)
 	CheckInput(BindName,io);
 end)
 
-
 function UpdateAccuracy()
 	totalPlayed+=1
 	accuracy = totalNotesHit/totalPlayed*100
@@ -3291,7 +3290,7 @@ function beatHit()
 	table.sort(notes,function(a,b)
 		return a.Y>b.Y
 	end)
-
+	
 	tweenIconSize(DadIcon,0.9 * (60/Conductor.BPM)/speedModifier)
 	tweenIconSize(BFIcon,0.9 * (60/Conductor.BPM)/speedModifier)
 
@@ -3301,7 +3300,7 @@ function beatHit()
 		if(noteData.changeBPM)then
 			local oldBPM = Conductor.BPM
 			Conductor:ChangeBPM(noteData.bpm)
-			print(("CHANGED BPM! (new: %s, old: %s)"):format(tostring(Conductor.BPM),tostring(oldBPM)))
+			print(("(new: %s, old: %s) BPM"):format(tostring(Conductor.BPM),tostring(oldBPM)))
 		end
 	end
 
@@ -3309,35 +3308,9 @@ function beatHit()
 		camControls.hudZoom+=0.015 -- 0.03
 		camControls.camZoom+=0.03 -- 0.015
 	end
-	
-	-- TimeBar UI
-	if TimeBar.Visible and generatedSong then
-		local DSPos = 0
-		if Conductor.Downscroll then
-			DSPos = UDim.new(1,-6)
-		else
-			DSPos = UDim.new(0,6)
-		end
-		
-		local goalTime = songLength
-		local songPos = (Conductor.SongPos/1000)
-		
-		if falseSongLength > -1 then
-			goalTime = falseSongLength
-		end
-		
-		TimeBar.BarContainer.Progress.Size = UDim2.fromScale(0,1)
-		TimeBar.Position = UDim2.new(UDim.new(.5,0),DSPos)
-		if songPos > 0 then
-			TimeBar.BarContainer.Progress.Size = UDim2.fromScale(songPos/goalTime,1)
-			local timeleft = goalTime-songPos
-			TimeBar.BarContainer.Time.Text = convertToHMS(timeleft)
-			TimeBar.BarContainer.Time.Position = UDim2.new(0,0,0,(DSPos.Offset))
-		end
-	end
-	
+
 	for i = 1, #loadedModchartData do
-		if(loadedModchartData[i] and loadedModchartData[i].BeatHit)then
+		if loadedModchartData[i].BeatHit then
 			loadedModchartData[i].BeatHit(totalBeats)
 		end
 	end
@@ -3351,6 +3324,32 @@ function beatHit()
 	end
 	if PlayerObjects.Dad and (not PlayerObjects.Dad:IsSinging()) and totalBeats%2 == 1 then
 		PlayerObjects.Dad:Dance()
+	end
+
+	-- TimeBar UI
+	if TimeBar.Visible and generatedSong then
+		local DSPos = 0
+		if Conductor.Downscroll then
+			DSPos = UDim.new(1,-6)
+		else
+			DSPos = UDim.new(0,6)
+		end
+
+		local goalTime = songLength
+		local songPos = (Conductor.SongPos/1000)
+
+		if falseSongLength > -1 then
+			goalTime = falseSongLength
+		end
+
+		TimeBar.BarContainer.Progress.Size = UDim2.fromScale(0,1)
+		TimeBar.Position = UDim2.new(UDim.new(.5,0),DSPos)
+		if songPos > 0 then
+			TimeBar.BarContainer.Progress.Size = UDim2.fromScale(songPos/goalTime,1)
+			local timeleft = goalTime-songPos
+			TimeBar.BarContainer.Time.Text = convertToHMS(timeleft)
+			TimeBar.BarContainer.Time.Position = UDim2.new(0,0,0,(DSPos.Offset))
+		end
 	end
 end
 
@@ -3389,7 +3388,7 @@ function stepHit()
 	if(totalSteps%4==0)then
 		beatHit()
 	end
-	
+
 	for i = 1, #loadedModchartData do
 		if(loadedModchartData[i] and loadedModchartData[i].StepHit)then
 			loadedModchartData[i].StepHit(totalSteps)
@@ -3399,7 +3398,7 @@ function stepHit()
 	local songPos = (Conductor.SongPos/1000)
 	local instrPos,voicePos = instrSound.TimePosition/instrSound.PlaybackSpeed,voiceSound.TimePosition/voiceSound.PlaybackSpeed
 	local offset = (SongIdInfo.Offset or 0) + (module.settings.ChartOffset/1000)
-	
+
 	if(songData.needsVoices)then
 		if(instrPos-(songPos - offset)>(20 * speedModifier) or voicePos-(songPos - offset) > (20 * speedModifier))then
 			resync()
@@ -3470,7 +3469,7 @@ function updatePosVars()
 
 	Conductor.AdjustedSongPos = Conductor.SongPos*instrSound.PlaybackSpeed;
 	Conductor.CurrentTrackPos = getPosFromTime(Conductor.SongPos)
-	
+
 	checkEventNote()
 end
 
@@ -3765,7 +3764,7 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 		updatePosVars();
 		CheckSpawns()
 	end
-	
+
 	if startedCountdown then
 		for i = 1, #loadedModchartData do
 			if(loadedModchartData[i] and loadedModchartData[i].Update) and generatedSong then
@@ -3775,7 +3774,7 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 	end
 
 	local lastNote:Note
-	
+
 	curStep= lastBPMChange.stepTime + floor((Conductor.SongPos-lastBPMChange.songTime)/Conductor.stepCrochet);
 
 	if (Conductor.SongPos>lastStep+Conductor.stepCrochet-Conductor.safeZoneOffset or Conductor.SongPos<lastStep+Conductor.safeZoneOffset)then
@@ -4151,7 +4150,7 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 	local likeRating = "";
 	local rating2 = ""
 	local rating3 = ""
-	
+
 	if accuracy == 100 then
 		rating2 = "Perfect!"
 		rating3 = "SS"
@@ -4179,7 +4178,7 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 	elseif accuracy >= 0 then
 		rating2 = ""
 	end
-	
+
 	if rates.miss < 1 then
 		if totalPlayed < 1 then likeRating = "?" end
 		if (rates.sick > 0) then likeRating = "SFC" end
@@ -4190,10 +4189,10 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 	elseif (rates.miss >= 10) then
 		likeRating = "Clear"
 	end
-	
+
 	ScoreLabel.Size = UDim2.fromScale(1,0.05)
 	ScoreLabel.Text = "Score: " .. tostring(module.PlayerStats.Score) .. " | Misses: " .. tostring(rates.miss) .. " | Rating: ".. tostring(rating2) .. " (" .. tostring(round(floor(accuracy),5)) .. "%)".. " - " .. tostring(likeRating)
-		--local ScoringAlt = gameUI.ScoringAlt
+	--local ScoringAlt = gameUI.ScoringAlt
 		--[[if songData.song == "Unlimited Power" then
 			ScoringAlt.Misses.Text = "Misses: " .. tostring(rates.miss)
 			ScoringAlt.Combo.Text = tostring(combo)
@@ -4220,7 +4219,7 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 		plr.Character=nil
 	end--]]
 end)
---pcall(RS.UnbindFromRenderStep,RS,"CameraUpdate")
+pcall(RS.UnbindFromRenderStep,RS,"CameraUpdate")
 
 --[[local lastViewport = cam.ViewportSize;
 local targetCam = CFrame.new()
@@ -4288,7 +4287,7 @@ RS:BindToRenderStep("CameraUpdate", Enum.RenderPriority.Camera.Value - 1, functi
 			if smoothy ~= camControls.camOffset then
 				smoothy = smoothy:Lerp(camControls.camOffset, 0.35 * camSpeed)
 			end
-			
+
 			cam.CFrame = targetCam * smoothy
 		else
 			cam.CFrame = targetCam * camControls.camOffset
@@ -4305,7 +4304,7 @@ RS:BindToRenderStep("CameraUpdate", Enum.RenderPriority.Camera.Value - 1, functi
 		camControls.camOffset = CFrame.new()
 		justStarted = false
 	end
-	
+
 	if(cam.ViewportSize~=lastViewport)then
 		for i = 1, #playerStrums do
 			local v = playerStrums[i]
@@ -4516,7 +4515,7 @@ function module.Kill()
 			loadedModchartData[i].cleanUp()
 		end
 	end
-	
+
 	print("death")
 	pcall(KillclientAnims)
 	GameplayEvent:Fire("Death")
