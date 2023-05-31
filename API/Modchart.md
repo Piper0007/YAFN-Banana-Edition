@@ -150,9 +150,12 @@
 			Runs an event through a processer that goes through all the known events and sends a signal to the 
       EventTrigger if it is not already defined.
 ```
+
 ## gameHandler.processEvent()
+```
   This function will be used whenever you want to process an event.
-  Any time \`processEvent()\` is used the \`EventTrigger()\` event is played inside the modchart.
+  Any time `processEvent()` is used the `EventTrigger()` event is played inside the modchart.
+```
   ### Available Events
   #### "set camera zoom"
     value1 : number
