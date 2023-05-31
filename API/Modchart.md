@@ -1,50 +1,54 @@
 # Modcharts
 
 ## Modchart Variables
-
 ### flipMode : boolean
- 	A bool which tells if it's playing Dad side.
+```A bool which tells if it's playing Dad side.```
 ### p1 : Character
- 	The opponent character.
+```The opponent character.```
 ### p2 : Character
-	The player character.
+```The player character.```
 ### dad : Character
-	Dad Character.
+```Dad Character.```
 ### dad2 : Character
-	Secondary Dad character.
+```Secondary Dad character.```
 ### bf : Character
-	BF character.
+```BF character.```
 ### bf2 : Character
-	Secondary BF character.
+```Secondary BF character.```
 ### playerObjects : table/Dictionary
+```
     || CONTENTS ||
     Dad : Object
     BF : Object
     Dad2 : Object
     BF2 : Object
+```
 ### defaultcamzoom : number
-	Changes the FOV of the camera by 70. Default is 1.
+``Changes the FOV of the camera by 70. Default is 1.``
 ### playerNoteOffsets : table/Array
-	Contains 'Vector2' values, which tells the Receptor offset.
+``Contains 'Vector2' values, which tells the Receptor offset.``
 ### opponentNoteOffsets : table/Array
-	Contains 'Vector2' values, which tells the Receptor offset.  
-### playSound : function (<value> : Sound|Id,<Volume> : number) (Volume of 2 is default)
-    A function which plays sounds
+``Contains 'Vector2' values, which tells the Receptor offset.``
+### playSound : function (soundId : id, volume : number) (default volume is 2)
+``A function which plays sounds``
 ### leftStrums : table/Array
-	Contains the receptors from the left side.
+``Contains the receptors from the left side.``
 ### rightStrums : table/Array
-	Contains the receptors from the right side.
+``Contains the receptors from the right side.``
 ### dadStrums : table/Array
-	Contains the opponent receptors.
+``Contains the opponent receptors.``
 ### playerStrums : table/Array
-	Contains the player receptors.
+``Contains the player receptors.``
 ### allReceptors : table/Array
-	Contains Dad and BF receptors.
+``Contains Dad and BF receptors.``
 ### _.GUI : table/Array
+```
     || CONTENTS ||
     Rotation : number
 		 variable that dictates the rotation of the receptor(s)
+```
 ### camControls : table/Dictionary
+```
     Handles the camera behaviour.
 		|| CONTENTS ||		
 		  zoom : number
@@ -65,7 +69,9 @@
 			DisableLerp : boolean
 				Toggles whenever the zoom should slowly tween back to their original value.
 				Useful if you want to make a consistent zoom mechanic.
+```
 ### internalSettings : table/Dictionary
+```
     Settings where you can toggle certain behaviours.
 		|| CONTENTS ||
 			autoSize : number
@@ -96,31 +102,41 @@
 				Must range from 0 to 1.
 			minHealth : number
 				This variable determins the minimum health that health drain will go to before stopping
+```
 ### gameUI : Instance/ScreenGui
+```
     Game user interface.
     If you want to add sprites to the UI, it's recommended to add them via gameUI.realGameUI.Notes
+```
 ### gameHandler : table/Dictionary
-    The engine module.
+``The engine module.``
 ### notes : table/Array
-	A list of all the notes that are currently being rendered.
+``A list of all the notes that are currently being rendered.``
 ### unspawnedNotes : table/Array
+```
 	An array which contains unspawned notes.
 	It's ordered by strumTime.
+```
 ### noteLanes : table/Array
+```
 	An array that contains lanes with your current rendering notes. (can be BF or Dad, only one of them)
 	I.E susNotesLanes[1][2]
 		Should access the first lane of notes and the second rendering note.
+```
 ### susNoteLanes : table/Array
+```
 	An array that contains lanes with your current rendering hold notes. (can be BF or Dad, only one of them)
 	I.E susNotesLanes[1][2]
 		Should access the first lane of hold notes and the second rendering note.
+```
 ### noteGroup : string
-	A string which tells what noteGroup is the song currently using.
+``A string which tells what noteGroup is the song currently using.``
 ### mapProps : string
-	Should return the object for the map but prob won't work.
+``Should return the object for the map but prob won't work.``
 ### initialSpeed : number
-	The speed of the scroll speed. This is like normal FNF but it's 0.45 times less
+``The speed of the scroll speed. This is like normal FNF but it's 0.45 times less``
 ### gameHandler : table/Directory
+```
 	Contains all the functions that affect the game
 		|| CONTENTS || 
 		changeIcon(name : string, side : boolean (false=dad, true=bf)) : function
@@ -133,10 +149,10 @@
 		processEvent(event : string, value1 : float, value2 : float, ...)
 			Runs an event through a processer that goes through all the known events and sends a signal to the 
       EventTrigger if it is not already defined.
-
+```
 ## gameHandler.processEvent()
   This function will be used whenever you want to process an event.
-  Any time `processEvent()` is used the `EventTrigger()` event is played inside the modchart.
+  Any time \`processEvent()\` is used the \`EventTrigger()\` event is played inside the modchart.
   ### Available Events
   #### "set camera zoom"
     value1 : number
