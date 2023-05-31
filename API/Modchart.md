@@ -158,6 +158,7 @@
 ```
 
   - "set camera zoom"
+ 
   	```
     value1 : number
       Sets the cameraZoom to value1
@@ -165,6 +166,7 @@
       Sets the hudZoom to value2
       ```
   - "tween camera zoom"
+  
   	```
     value1 : number
       Target camera zoom
@@ -176,6 +178,7 @@
       Sets the type of tween. (In, Out, InOut)
       ```
   - "add camera zoom"
+  
   	```
     This event only plays when the "CameraZooms" settings is true and
     hudZoom is less than 1.4.
@@ -185,6 +188,7 @@
         Changes the cameraZoom by this number
 	```
   - "camera follow pos"
+  
   	```
     Changes the camera offset to the defined position.
       value1 : number
@@ -193,12 +197,14 @@
         The y value of the offset
 	```
   - "set cam speed"
+  
   	```
     Cam Speed controls how fast the camera moves from position to position.
       value1 : number
         Sets the camSpeed to this value
 	```
   - "camera flash"
+  
   	```
     This event only plays when the "distractions" setting is true
       value1 : number
@@ -207,6 +213,7 @@
         Controls the color of the flash
 	```
   - "screen shake"
+  
   	```
     This event shakes the screen but can also shake the UI
       value1 : number / string ("10, 0.1")
@@ -219,6 +226,7 @@
         duration of the UI shake and the second controls the intensity.
 	```
   - "hey!"
+  
   	```
     Plays the "hey" animation for either boyfriend, girlfriend, or dad
     However, only boyfriend works at the moment.
@@ -226,6 +234,7 @@
         Name of the character to dance.
 	```
   - "lane modifier"
+  
   	```
     Changes the scroll speed of a arrows in a specific lane.
       value1 : number
@@ -234,6 +243,7 @@
         The value is the speed the scroll speed changes to.
 	```
   - "change scroll speed"
+  
   	```
     This event only plays when the setting "ForceSpeed" is false.
       value1 : number
@@ -241,6 +251,7 @@
       value2 : number
         How quick in seconds that the scroll speed will change to it's new value.
 	```
+	
 ## Examples
 ```lua
 --!nolint UnknownGlobal
