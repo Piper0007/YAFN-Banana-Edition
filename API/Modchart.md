@@ -3,9 +3,9 @@
 ## Modchart Variables
 
 ### flipMode : boolean
-    A bool which tells if it's playing Dad side.
+ 	A bool which tells if it's playing Dad side.
 ### p1 : Character
-    The opponent character.
+ 	The opponent character.
 ### p2 : Character
 	The player character.
 ### dad : Character
