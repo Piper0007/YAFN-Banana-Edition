@@ -3,7 +3,7 @@
 A heavily modified version of Yet Another Funkin' Night.
 
 This document will explain:
-- [ ] Modcharts
+- [ ] [Modcharts](API/Modchart.md)
 - [ ] Events
 - [ ] GameHandler.lua
 - [ ] UIHandler.lua
