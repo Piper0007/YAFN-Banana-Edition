@@ -156,7 +156,7 @@
   This function will be used whenever you want to process an event.
   Any time `processEvent()` is used the `EventTrigger()` event is played inside the modchart.
 ```
-  ### Available Events
+
   #### "set camera zoom"
     value1 : number
       Sets the cameraZoom to value1
