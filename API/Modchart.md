@@ -93,8 +93,8 @@ A bool which tells if it's playing Dad side.
 ### camControls : table/Dictionary
 	
 ```LiveScript
-Handles the camera behaviour.
-|| CONTENTS ||		
+	Handles the camera behaviour.
+	|| CONTENTS ||		
 	zoom : number
 		Sets the game UI/camera zoom, depending by BehaviourType.
 		This value is useless if BehaviourType is set to "Separate".
