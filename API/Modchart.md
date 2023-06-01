@@ -83,7 +83,7 @@ A bool which tells if it's playing Dad side.
 	
 ```Contains Dad and BF receptors.```
 	
-### _.GUI : table/Array
+### .GUI : table/Array
 	
 ```LiveScript
     || CONTENTS ||
