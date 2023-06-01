@@ -1,6 +1,8 @@
 # Modcharts
 
-## Modchart Variables
+<details>
+<summary>Modchart Variables</summary>
+	
 ### flipMode : boolean
 ```A bool which tells if it's playing Dad side.```
 ### p1 : Character
@@ -150,8 +152,12 @@
 			Runs an event through a processer that goes through all the known events and sends a signal to the 
       EventTrigger if it is not already defined.
 ```
+	
+</details>
 
-## gameHandler.processEvent()
+<details>
+	<summary>gameHandler.processEvent()</summary>
+	
 ```
   This function will be used whenever you want to process an event.
   Any time `processEvent()` is used the `EventTrigger()` event is played inside the modchart.
@@ -241,8 +247,12 @@
       value2 : number
         How quick in seconds that the scroll speed will change to it's new value.
 ```
-	
-## Examples
+
+</details>
+
+<details>
+<summary>Examples</summary>
+
 ```lua
 --!nolint UnknownGlobal
 --!nolint UninitializedLocal
@@ -266,3 +276,4 @@ return {
 	end,
 }
 ```
+</details>
