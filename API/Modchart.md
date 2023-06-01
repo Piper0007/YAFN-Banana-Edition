@@ -239,99 +239,117 @@ Runs when an event is played, even when an event is called from a modchart.
 <details>
 	<summary>gameHandler.processEvent()</summary>
 	
-```
+```LiveScript
 This function will be used whenever you want to process an event.
-Any time `processEvent()` is used the `EventTrigger()` event is played inside the modchart.
+Any time "processEvent()" is used the "EventTrigger()" event is played inside the modchart.
 ```
 
   - "set camera zoom"
-```
+	
+```LiveScript
 value1 : number
 	Sets the cameraZoom to value1
 value2 : number
 	Sets the hudZoom to value2
 ```
+	
   - "tween camera zoom"
+	
+```LiveScript
+value1 : number
+	Target camera zoom
+value2 : number
+	Length of the tween
+value3 : EasingStyle
+	Sets the style of the tween
+value4 : EasingDirection
+	Sets the type of tween. (In, Out, InOut)
 ```
-    value1 : number
-      Target camera zoom
-    value2 : number
-      Length of the tween
-    value3 : EasingStyle
-      Sets the style of the tween
-    value4 : EasingDirection
-      Sets the type of tween. (In, Out, InOut)
-```
+	
   - "add camera zoom"
+	
+```LiveScript
+This event only plays when the "CameraZooms" settings is true and
+hudZoom is less than 1.4.
+	value1 : number
+		Changes the hudZoom by this number
+	value2 : number
+		Changes the cameraZoom by this number
 ```
-    This event only plays when the "CameraZooms" settings is true and
-    hudZoom is less than 1.4.
-      value1 : number
-        Changes the hudZoom by this number
-      value2 : number
-        Changes the cameraZoom by this number
-```
+	
   - "camera follow pos"
+	
+```LiveScript
+Changes the camera offset to the defined position.
+	value1 : number
+		The x value of the offset
+	value2 : number
+		The y value of the offset
 ```
-    Changes the camera offset to the defined position.
-      value1 : number
-        The x value of the offset
-      value2 : number
-        The y value of the offset
-```
+	
   - "set cam speed"
-```
-    Cam Speed controls how fast the camera moves from position to position.
-      value1 : number
-        Sets the camSpeed to this value
+	
+```LiveScript
+Cam Speed controls how fast the camera moves from position to position.
+	value1 : number
+		Sets the camSpeed to this value
 ```
   - "camera flash"  
+```LiveScript
+This event only plays when the "distractions" setting is true
+	value1 : number
+		Controls the speed of the flash
+	value2 : hex
+		Controls the color of the flash
 ```
-    This event only plays when the "distractions" setting is true
-      value1 : number
-        Controls the speed of the flash
-      value2 : hex
-        Controls the color of the flash
-```
+	
   - "screen shake"
+	
+```LiveScript
+This event shakes the screen but can also shake the UI
+	value1 : number / string ("10, 0.1")
+		When it is a number it controls the duration of the screen shake
+        	When it is a string separated by a comma the first number controls the
+        	duration of the UI shake and the second controls the intensity.
+	value2 : number / string ("10, 0.1")
+		When a number it controls the intensity of the screen shake
+        	When a string separated by a comma the first number controls the 
+        	duration of the UI shake and the second controls the intensity.
 ```
-    This event shakes the screen but can also shake the UI
-      value1 : number / string ("10, 0.1")
-        When it is a number it controls the duration of the screen shake
-        When it is a string separated by a comma the first number controls the
-        duration of the UI shake and the second controls the intensity.
-      value2 : number / string ("10, 0.1")
-        When a number it controls the intensity of the screen shake
-        When a string separated by a comma the first number controls the 
-        duration of the UI shake and the second controls the intensity.
-```
+	
   - "hey!"
+	
+```LiveScript
+Plays the "hey" animation for either boyfriend, girlfriend, or dad
+however, only boyfriend works at the moment.
+	value1 : string
+		Name of the character to dance.
 ```
-    Plays the "hey" animation for either boyfriend, girlfriend, or dad
-    However, only boyfriend works at the moment.
-      value1 : string
-        Name of the character to dance.
-```
+	
   - "lane modifier"  
+	
+```LiveScript
+Changes the scroll speed of a arrows in a specific lane.
+	value1 : number
+		The value is the lane. Usually there are 8 lanes
+	value2 : number
+		The value is the speed the scroll speed changes to
 ```
-    Changes the scroll speed of a arrows in a specific lane.
-      value1 : number
-        The value is the lane. Usually there are 8 lanes
-      value2 : number
-        The value is the speed the scroll speed changes to.
-```
+	
   - "change scroll speed"
-```
-    This event only plays when the setting "ForceSpeed" is false.
-      value1 : number
-        The speed the scroll speed will change to. (Speed Multiplier that is not actuall scroll speed)
-      value2 : number
-        How quick in seconds that the scroll speed will change to it's new value.
+
+```LiveScript
+This event only plays when the setting "ForceSpeed" is false.
+	value1 : number
+		The speed the scroll speed will change to. (Speed Multiplier that is not actuall scroll speed)
+	value2 : number
+		How quick in seconds that the scroll speed will change to it's new value.
 ```
 
 </details>
 
 <details>
+	
 <summary>Examples</summary>
 
 ```lua
