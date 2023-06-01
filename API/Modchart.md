@@ -2,7 +2,10 @@
 
 <details>
 	
-<summary>Modchart Variables</summary>
+<summary>
+Modchart Variables
+</summary>
+	
 	
 ### flipMode : boolean
 	
@@ -293,6 +296,7 @@ Runs when an event is played, even when an event is called from a modchart.
 </details>
 
 <details>
+
 	<summary>gameHandler.processEvent()</summary>
 	
 ```LiveScript
@@ -431,4 +435,5 @@ return {
 	end,
 }
 ```
+	
 </details>
