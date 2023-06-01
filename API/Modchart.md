@@ -295,8 +295,7 @@ Runs when an event is played, even when an event is called from a modchart.
 </details>
 
 <details>
-
-	<summary>gameHandler.processEvent()</summary>
+<summary>gameHandler.processEvent()</summary>
 	
 ```LiveScript
 This function will be used whenever you want to process an event.
