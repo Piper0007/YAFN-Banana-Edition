@@ -6,7 +6,6 @@
 Modchart Variables
 </summary>
 	
-	
 ### flipMode : boolean
 	
 ```
@@ -94,68 +93,68 @@ A bool which tells if it's playing Dad side.
 ### camControls : table/Dictionary
 	
 ```LiveScript
-    Handles the camera behaviour.
-		|| CONTENTS ||		
-		  zoom : number
-				Sets the game UI/camera zoom, depending by BehaviourType.
-				This value is useless if BehaviourType is set to "Separate".
-			BehaviourType : string (All,HUD,Camera,Separate)
-				Changes how the zoom should work.
-			hudZoom : number
-				Sets the game UI zoom.
-				Only effective if BehaviourType is set to "Separate".
-			camZoom : number
-				Sets the camera zoom.
-				Only effective if BehaviourType is set to "Separate".
-			camOffset : CFrame
-				Camera offset.
-			StayOnCenter : boolean
-				Forces the camera to stay in center of the spot.
-			DisableLerp : boolean
-				Toggles whenever the zoom should slowly tween back to their original value.
-				Useful if you want to make a consistent zoom mechanic.
+Handles the camera behaviour.
+|| CONTENTS ||		
+	zoom : number
+		Sets the game UI/camera zoom, depending by BehaviourType.
+		This value is useless if BehaviourType is set to "Separate".
+	BehaviourType : string (All,HUD,Camera,Separate)
+		Changes how the zoom should work.
+	hudZoom : number
+		Sets the game UI zoom.
+		Only effective if BehaviourType is set to "Separate".
+	camZoom : number
+		Sets the camera zoom.
+		Only effective if BehaviourType is set to "Separate".
+	camOffset : CFrame
+		Camera offset.
+	StayOnCenter : boolean
+		Forces the camera to stay in center of the spot.
+	DisableLerp : boolean
+		Toggles whenever the zoom should slowly tween back to their original value.
+		Useful if you want to make a consistent zoom mechanic.
 ```
 	
 ### internalSettings : table/Dictionary
 	
 ```LiveScript
-    Settings where you can toggle certain behaviours.
-		|| CONTENTS ||
-			autoSize : number
-				Only used to determine sprites size at start up.
-				Its not recommended to edit this value.
-			notesRotateWithReceptors : boolean
-				This sets the notes to copy the receptors rotation.
-			notesShareTransparencyWithReceptors : boolean
-				This sets the notes to copy the receptors transparency. (Alpha variable for clarification)
-			OpponentNoteDrain : number
-				This toggles whenever the NPC should drain the players health, if given value is a number.
-				By default its set to False, which does nothing.
-			useDuoSkins : boolean
-				Determines if the engine should use separate Note skins for each side.
-				Not recommended to edit, although its only used once at start up.
-			useBPMSyncing : booleans
-				Toggles if the engine should use the BPM syncing.
-				This is added beacuse certain modcharts breaks if this is used.
-				We dont know why as well.
-			currentNoteSkinChange : table|nil
-				This variable is used to change the note skin as soon they spawn.
-				Contains the XML, ImageLabel and a boolean in order to work.
-				Not recommended to edit.
-			showOnlyStrums : boolean
-				Unused.
-			NoteSpawnTransparency : number
-				This variable is used to change the notes transparency as soon they spawn.
-				Must range from 0 to 1.
-			minHealth : number
-				This variable determins the minimum health that health drain will go to before stopping
+Settings where you can toggle certain behaviours.
+|| CONTENTS ||
+	autoSize : number
+		Only used to determine sprites size at start up.
+		Its not recommended to edit this value.
+	notesRotateWithReceptors : boolean
+		This sets the notes to copy the receptors rotation.
+	notesShareTransparencyWithReceptors : boolean
+		This sets the notes to copy the receptors transparency. (Alpha variable for clarification)
+	OpponentNoteDrain : number
+		This toggles whenever the NPC should drain the players health, if given value is a number.
+		By default its set to False, which does nothing.
+	useDuoSkins : boolean
+		Determines if the engine should use separate Note skins for each side.
+		Not recommended to edit, although its only used once at start up.
+	useBPMSyncing : booleans
+		Toggles if the engine should use the BPM syncing.
+		This is added beacuse certain modcharts breaks if this is used.
+		We dont know why as well.
+	currentNoteSkinChange : table|nil
+		This variable is used to change the note skin as soon they spawn.
+		Contains the XML, ImageLabel and a boolean in order to work.
+		Not recommended to edit.
+	showOnlyStrums : boolean
+		Unused.
+	NoteSpawnTransparency : number
+		This variable is used to change the notes transparency as soon they spawn.
+		Must range from 0 to 1.
+	minHealth : number
+		This variable determins the minimum health that health drain will go to before stopping
 ```
 	
 ### gameUI : Instance/ScreenGui
 	
 ```LiveScript
-    Game user interface.
-    If you want to add sprites to the UI, its recommended to add them via gameUI.realGameUI.Notes
+Game user interface.
+If you want to add sprites to the UI, its recommended to add them via gameUI.realGameUI.Notes
 ```
 ### gameHandler : table/Dictionary
 	
@@ -168,22 +167,22 @@ A bool which tells if it's playing Dad side.
 ### unspawnedNotes : table/Array
 	
 ```LiveScript
-	An array which contains unspawned notes.
-	Its ordered by strumTime.
+An array which contains unspawned notes.
+Its ordered by strumTime.
 ```
 ### noteLanes : table/Array
 	
 ```LiveScript
-	An array that contains lanes with your current rendering notes. (can be BF or Dad, only one of them)
-	I.E susNotesLanes[1][2]
-		Should access the first lane of notes and the second rendering note.
+An array that contains lanes with your current rendering notes. (can be BF or Dad, only one of them)
+I.E susNotesLanes[1][2]
+	Should access the first lane of notes and the second rendering note.
 ```
 ### susNoteLanes : table/Array
 	
 ```LiveScript
-	An array that contains lanes with your current rendering hold notes. (can be BF or Dad, only one of them)
-	I.E susNotesLanes[1][2]
-		Should access the first lane of hold notes and the second rendering note.
+An array that contains lanes with your current rendering hold notes. (can be BF or Dad, only one of them)
+I.E susNotesLanes[1][2]
+	Should access the first lane of hold notes and the second rendering note.
 ```
 ### noteGroup : string
 	
@@ -200,18 +199,18 @@ A bool which tells if it's playing Dad side.
 ### gameHandler : table/Directory
 	
 ```LiveScript
-	Contains all the functions that affect the game
-		|| CONTENTS || 
-		changeIcon(name : string, side : boolean (false=dad, true=bf)) : function
-      			Changes the icon for the selected side.
-		changeAnimation(name : , player : object, speed, looped : boolean, force : boolean) : function
-			Changes player's animation but doesn't change appearance.
-		flash(hex, speed : number, int : initial transparency) : function
-			Utilizes a frame that covers the size of the screen to tween its transparency to from the initial value to 1
-      			(which is completely transparent).
-		processEvent(event : string, value1 : float, value2 : float, ...)
-			Runs an event through a processer that goes through all the known events and sends a signal to the 
-      			EventTrigger if it is not already defined.
+Contains all the functions that affect the game
+|| CONTENTS || 
+	changeIcon(name : string, side : boolean (false=dad, true=bf)) : function
+      		Changes the icon for the selected side.
+	changeAnimation(name : , player : object, speed, looped : boolean, force : boolean) : function
+		Changes player's animation but doesn't change appearance.
+	flash(hex, speed : number, int : initial transparency) : function
+		Utilizes a frame that covers the size of the screen to tween its transparency to from the initial value to 1
+      		(which is completely transparent).
+	processEvent(event : string, value1 : float, value2 : float, ...)
+		Runs an event through a processer that goes through all the known events and sends a signal to the 
+      		EventTrigger if it is not already defined.
 ```
 	
 </details>
