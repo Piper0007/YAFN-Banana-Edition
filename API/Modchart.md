@@ -156,19 +156,97 @@
 </details>
 
 <details>
+	<summary>Modchart Functions</summary>
+	
+### Functions are vital for modcharts to work and are called at specific times.
+	
+- "preInit = function(gameUI : frame, module : table)"
+	
+```
+This function is played before the song has started loadin
+```
+	
+- "init = function()"
+	
+```
+This function is played when the song is loading
+```
+	
+- "preStart = function()"
+	
+```
+Runs when the countdown starts
+```
+	
+- "Start = function()"
+	
+```
+Runs when the song starts
+```
+	
+- "P1NoteHit = function(noteType : string, noteData : number, note : table)"
+	
+```
+Runs when the player hits a note
+```
+	
+- "P2NoteHit = function(noteType : string, noteData : number)"
+	
+```
+Runs when the opponent hits a note, this includes other players
+```
+	
+- "Update = function(deltaTime)"
+	
+```
+Runs whenever a frame is rendered
+```
+	
+- "StepHit = function(curStep)"
+	
+```
+Runs when a step is hit
+```
+	
+- "BeatHit = function(curBeat)"
+	
+```
+Runs when a beat is hit
+```
+	
+- "sectionChange = function(currentSection : table)"
+
+```
+Runs when a section changes
+	"currentSection" is a table that includes,
+		mustHitSection : boolean,
+		typeOfSection : number,
+		lengthInSteps : number,
+		sectionNotes : table
+```
+	
+- "EventTrigger = function(name : string, value1 : float, value2 : float, ...)"
+	
+```
+Runs when an event is played, even when an event is called from a modchart.
+```
+	
+</details>
+
+<details>
 	<summary>gameHandler.processEvent()</summary>
 	
 ```
-  This function will be used whenever you want to process an event.
-  Any time `processEvent()` is used the `EventTrigger()` event is played inside the modchart.
+This function will be used whenever you want to process an event.
+Any time `processEvent()` is used the `EventTrigger()` event is played inside the modchart.
 ```
 
   - "set camera zoom"
 ```
-    value1 : number
-      Sets the cameraZoom to value1
-    value2 : number
-      Sets the hudZoom to value2
+value1 : number
+	Sets the cameraZoom to value1
+value2 : number
+	Sets the hudZoom to value2
 ```
   - "tween camera zoom"
 ```
