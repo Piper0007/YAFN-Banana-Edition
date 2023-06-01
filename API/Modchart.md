@@ -1,7 +1,9 @@
 # Modcharts
 
 <details>
+	
 <summary>Modchart Variables</summary>
+	
 	
 ### flipMode : boolean
 ```A bool which tells if it's playing Dad side.```
@@ -18,7 +20,7 @@
 ### bf2 : Character
 ```Secondary BF character.```
 ### playerObjects : table/Dictionary
-```
+```LiveScript
     || CONTENTS ||
     Dad : Object
     BF : Object
@@ -44,13 +46,13 @@
 ### allReceptors : table/Array
 ``Contains Dad and BF receptors.``
 ### _.GUI : table/Array
-```
+```LiveScript
     || CONTENTS ||
     Rotation : number
 		 variable that dictates the rotation of the receptor(s)
 ```
 ### camControls : table/Dictionary
-```
+```LiveScript
     Handles the camera behaviour.
 		|| CONTENTS ||		
 		  zoom : number
@@ -73,12 +75,12 @@
 				Useful if you want to make a consistent zoom mechanic.
 ```
 ### internalSettings : table/Dictionary
-```
+```LiveScript
     Settings where you can toggle certain behaviours.
 		|| CONTENTS ||
 			autoSize : number
-				Only used to determine sprite's size at start up.
-				It's not recommended to edit this value.
+				Only used to determine sprites size at start up.
+				Its not recommended to edit this value.
 			notesRotateWithReceptors : boolean
 				This sets the notes to copy the receptors rotation.
 			notesShareTransparencyWithReceptors : boolean
@@ -88,11 +90,11 @@
 				By default its set to False, which does nothing.
 			useDuoSkins : boolean
 				Determines if the engine should use separate Note skins for each side.
-				Not recommended to edit, although it's only used once at start up.
+				Not recommended to edit, although its only used once at start up.
 			useBPMSyncing : booleans
 				Toggles if the engine should use the BPM syncing.
 				This is added beacuse certain modcharts breaks if this is used.
-				We don't know why as well.
+				We dont know why as well.
 			currentNoteSkinChange : table|nil
 				This variable is used to change the note skin as soon they spawn.
 				Contains the XML, ImageLabel and a boolean in order to work.
@@ -106,27 +108,27 @@
 				This variable determins the minimum health that health drain will go to before stopping
 ```
 ### gameUI : Instance/ScreenGui
-```
+```LiveScript
     Game user interface.
-    If you want to add sprites to the UI, it's recommended to add them via gameUI.realGameUI.Notes
+    If you want to add sprites to the UI, its recommended to add them via gameUI.realGameUI.Notes
 ```
 ### gameHandler : table/Dictionary
 ``The engine module.``
 ### notes : table/Array
 ``A list of all the notes that are currently being rendered.``
 ### unspawnedNotes : table/Array
-```
+```LiveScript
 	An array which contains unspawned notes.
-	It's ordered by strumTime.
+	Its ordered by strumTime.
 ```
 ### noteLanes : table/Array
-```
+```LiveScript
 	An array that contains lanes with your current rendering notes. (can be BF or Dad, only one of them)
 	I.E susNotesLanes[1][2]
 		Should access the first lane of notes and the second rendering note.
 ```
 ### susNoteLanes : table/Array
-```
+```LiveScript
 	An array that contains lanes with your current rendering hold notes. (can be BF or Dad, only one of them)
 	I.E susNotesLanes[1][2]
 		Should access the first lane of hold notes and the second rendering note.
@@ -138,25 +140,26 @@
 ### initialSpeed : number
 ``The speed of the scroll speed. This is like normal FNF but it's 0.45 times less``
 ### gameHandler : table/Directory
-```
+```LiveScript
 	Contains all the functions that affect the game
 		|| CONTENTS || 
 		changeIcon(name : string, side : boolean (false=dad, true=bf)) : function
-      Changes the icon for the selected side.
+      			Changes the icon for the selected side.
 		changeAnimation(name : , player : object, speed, looped : boolean, force : boolean) : function
 			Changes player's animation but doesn't change appearance.
-    flash(hex, speed : number, int : initial transparency) : function
-      Utilizes a frame that covers the size of the screen to tween it's transparency to from the initial value to 1
-      (which is completely transparent).
+		flash(hex, speed : number, int : initial transparency) : function
+			Utilizes a frame that covers the size of the screen to tween its transparency to from the initial value to 1
+      			(which is completely transparent).
 		processEvent(event : string, value1 : float, value2 : float, ...)
 			Runs an event through a processer that goes through all the known events and sends a signal to the 
-      EventTrigger if it is not already defined.
+      			EventTrigger if it is not already defined.
 ```
 	
 </details>
 
 <details>
 	<summary>Modchart Functions</summary>
+	
 	
 ### Functions are vital for modcharts to work and are called at specific times.
 	
