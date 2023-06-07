@@ -214,11 +214,6 @@ local function InitializeGame(Module, PlayerMode, plrs)
 		OwnerWait.Visible = false
 		return
 	end
-	if not (GameHandler.PositioningParts.isOpponentAvailable or bf2 or dad2)then
-		LeaveButton.Visible = true
-	else
-		LeaveButton.Visible = false
-	end
 	OwnerWait.Visible = false
 	local CRCon = compRemote.OnClientEvent:Connect(function(msgType,...)
 		if msgType == 0x1 then
@@ -391,9 +386,10 @@ remote.OnClientEvent:Connect(function(signalType,...)
 			warn(issue)
 		end
 		local parts = {"Boyfriend", "Dad", "Boyfriend2", "Dad2"}
+		wait(0.1)
 		for i = 1, #parts do
 			local part = PositioningParts.Spot:FindFirstChild(parts[i])
-			if sidesPos[i] then
+			if sidesPos[i]:IsA("Part") then
 				part.CFrame = sidesPos[i]
 			end
 		end
