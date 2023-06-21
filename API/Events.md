@@ -81,4 +81,12 @@ Value 2 is the duration or speed at which the scroll changes speed (if it is les
 ```
 </details>
 
+<details>
+<summary>
+How to add Events
+</summary>
+
+Nothing here yet :/
+</details>
+
 
