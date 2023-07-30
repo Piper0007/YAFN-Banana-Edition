@@ -46,6 +46,7 @@ local DifficultyList = {
 	"Fair";
 	"Hell";
 	"Unfair";
+	"Get-Real";
 	"Mania";
 	"Multikey";
 	"Old";
@@ -54,7 +55,7 @@ local DifficultyList = {
 	"Blackout";
 	"God";
 	"WIP";
-	"Voiid"
+	"Voiid";
 }
 local PlayerOptionList = {
 	'Duel';
@@ -92,6 +93,7 @@ local DifficultyColor = { -- Stroke color
 local DifficultyColor2 = { -- Text color
 	Blackout =Color3.new(0, 0, 0);
 	Voiid = Color3.new(0, 0, 0);
+	Encore = Color3.new(0, 0, 0);
 }
 
 local DifficultyFont = { -- changes text font

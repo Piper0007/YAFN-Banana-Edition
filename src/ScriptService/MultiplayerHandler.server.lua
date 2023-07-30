@@ -196,7 +196,7 @@ end
 function replaceWelds2(pm,m)
 	--  SCALE FIRST DIPSHIT
 	local ResetScale = m:GetAttribute("LimbScale")
-	
+
 	if ResetScale then
 		ResetScale = pm
 		local Scale = string.split( m:GetAttribute("LimbScale"),",")
@@ -215,33 +215,33 @@ function replaceWelds2(pm,m)
 		end
 	end
 	---
-	
-	
+
+
 	local HumanoidParts = {}
 	for i,v in pairs(pm:GetChildren())  do
 		if v:IsA("Part") then
 			HumanoidParts[v.Name] = v
 		end
 	end
-	
-	
+
+
 	local NM = m
 	local InstancestoClear = {}
 	local InstancesToCheck = {}
-	
+
 	for i,v in pairs(NM:GetDescendants()) do 
 		if v:IsA("JointInstance") then 
 			if v.Part0 and HumanoidParts[v.Part0.Name] then
 				v.Part0 = HumanoidParts[v.Part0.Name]
 			end
-			
+
 			if v.Part1 and  HumanoidParts[v.Part1.Name] then
 				v.Part1 = HumanoidParts[v.Part1.Name]
 			end
 		end
-		
+
 	end
-	
+
 	for i,v in pairs(NM:GetChildren()) do 
 		if  HumanoidParts[v.Name] then
 			local P = pm[v.Name]
@@ -260,11 +260,11 @@ function replaceWelds2(pm,m)
 			end
 		end
 	end
-	
---	warn(InstancestoClear)
+
+	--	warn(InstancestoClear)
 
 	NM:Destroy()
---	parentDeadLock(FM)
+	--	parentDeadLock(FM)
 	return InstancestoClear,ResetScale
 end
 
@@ -313,9 +313,9 @@ local function replaceWelds(playerModel,model)
 				Inst.Part1 = similarPart
 			end
 		end
-		
+
 	end
-	
+
 	-- Reparent the other parts to the player model.
 	local reparentedInstances = {}
 	for Parent,weld in next,humanoidWelds do
@@ -326,7 +326,7 @@ local function replaceWelds(playerModel,model)
 	for _,ModelInst in next,modelProps do
 		if HumanoidParts[ModelInst.Name] then continue end -- skip the part
 		if ModelInst:IsA("Humanoid") or ModelInst:IsA("Accoutrement") or ModelInst:IsA("Clothing")  or ModelInst:IsA("BodyColors") then continue end
-		
+
 		ModelInst.Parent = playerModel
 		parentDeadLock(ModelInst)
 		reparentedInstances[#reparentedInstances+1] = ModelInst
@@ -335,6 +335,8 @@ local function replaceWelds(playerModel,model)
 end
 
 local cooldownList = {}
+
+local playbackSpeed = 1
 
 Remote.OnServerEvent:Connect(function(plr,signalType,...)
 	if signalType == 0x0 then -- abrupt gameplay end
@@ -354,7 +356,7 @@ Remote.OnServerEvent:Connect(function(plr,signalType,...)
 			print("sussy " .. plr.Name)
 			return
 		end
-		
+
 		local compRemote = SpotBindFunc:Invoke("InitializeCompRemote",Spot, plr, songModule, songModule, songSettings)
 		print(Spot:GetAttribute("randomSeed"))
 		if compRemote == nil then
@@ -363,11 +365,11 @@ Remote.OnServerEvent:Connect(function(plr,signalType,...)
 			return
 		end
 		--print("remote | ", compRemote, SpotBindFunc, SpotEvent)
-		
+
 		-- Check if their animations does contain any props to insert into.
 		local chartData = HS:JSONDecode(require(songModule))
 		local SelSoundIds = SongIDs[chartData.song.song]
-		
+
 		if BF and BF.Character then 
 			local animationName = plrSettingsCache[BF.UserId].ForcePlayerAnim
 			local AnimationFolder = RS.Animations.CharacterAnims:FindFirstChild(animationName ~= "Default" and animationName or (SelSoundIds.BFAnimations or "")) or RS.Animations.CharacterAnims.BF
@@ -413,22 +415,22 @@ Remote.OnServerEvent:Connect(function(plr,signalType,...)
 			end--]]
 			SpotBindFunc:Invoke("QueueInstancesRemoval",false,DadRI2,DSCALE)
 		end
-		
+
 		-- end
-		
+
 		if BF then Remote:FireClient(BF,0x2,songModule,songSettings[plr]) end
 		if Dad then Remote:FireClient(Dad,0x2,songModule,songSettings[plr]) end
 		if BF2 then Remote:FireClient(BF2,0x2,songModule,songSettings[plr],'BF2') end
 		if Dad2 then Remote:FireClient(Dad2,0x2,songModule,songSettings[plr],'Dad2') end
-		
+
 		local SpotSound = Spot.AccuracyRateOrigin:WaitForChild("RoundSong",5)
 		local SpotVocals = Spot.AccuracyRateOrigin:WaitForChild("RoundVocals",5)
 		if not SpotSound then
 			return
 		end
-		
-		
-		
+
+
+
 		--print("External sound unavailable at the moment!")
 		--local directNames = string.split(songModule:GetFullName(),".")
 		SpotSound:SetAttribute("BPM",chartData.song.bpm);
@@ -453,6 +455,9 @@ Remote.OnServerEvent:Connect(function(plr,signalType,...)
 		else
 			Spot.Event:Fire(isBF and "BFTrigger" or "DadTrigger",plr)
 		end
+	elseif signalType == 0x6 then
+		print(...)
+		playbackSpeed = ...
 	end
 end)
 
@@ -471,7 +476,7 @@ FuncRemote.OnServerInvoke = function(plr,msgType,...)
 		local spot = ...
 		local SpotBindFunc,SpotEvent = BindFunc:Invoke("GetSpotRemotes",spot)
 		local BF, Dad, BF2, Dad2 = SpotBindFunc:Invoke("GetPlayersFromSpot",spot)
-		
+
 		if BF2 == plr then
 			return Dad
 		elseif Dad2 == plr then
@@ -481,16 +486,16 @@ FuncRemote.OnServerInvoke = function(plr,msgType,...)
 		elseif Dad == plr then
 			return BF
 		end
-		
-		
+
+
 		-- 0x1 used to be here, occupied when loading the settings.
 	elseif msgType == 0x2 then -- Save Settings
 		local clientSettings = ...
-		
+
 		local cacheSettings = plrSettingsCache[plr.UserId]
-		
+
 		if not cacheSettings then error"Wrong Data." end
-		
+
 		for SettingName, Value in next, clientSettings do
 			if type(Value) == "table" then
 				if SettingName == "Keybinds" then
@@ -502,18 +507,18 @@ FuncRemote.OnServerInvoke = function(plr,msgType,...)
 				cacheSettings[SettingName] = Value
 				continue
 			end
-			
+
 			if defaultSettings[SettingName] == nil then
 				warn("Setting doesn't exist, skipping...")
 				continue
 			end
-			
+
 			if cacheSettings[SettingName] ~= Value then
 				print(("Changing %s with %s (old:%s)"):format(SettingName,tostring(Value),tostring(cacheSettings[SettingName])))
 				cacheSettings[SettingName] = Value
 			end
 		end
-		
+
 		print("Finshed changing settings.",clientSettings)
 		plr:SetAttribute("SharedSettings",HS:JSONEncode(filterSettings(plrSettingsCache[plr.UserId])))
 		--[[
@@ -545,6 +550,9 @@ FuncRemote.OnServerInvoke = function(plr,msgType,...)
 		local Spot = ...
 		local SpotBindFunc,SpotEvent = BindFunc:Invoke("GetSpotRemotes",Spot)
 		return SpotBindFunc:Invoke("GetPlayersFromSpot",Spot)
+
+	elseif msgType == 0x4 then -- return playbackSpeed
+		return playbackSpeed
 	end
 end
 

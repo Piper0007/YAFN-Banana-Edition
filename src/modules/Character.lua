@@ -49,9 +49,9 @@ function Character.new(char,cf,isPlayer,animTable,animName,MicrophoneName, speed
 	charObj:AddAnimation("singLEFT",animTable["SingLeft"],speedModifier,false,Enum.AnimationPriority.Movement)
 	charObj:AddAnimation("singRIGHT",animTable["SingRight"],speedModifier,false,Enum.AnimationPriority.Movement)
 	charObj:AddAnimation("singUP",animTable["SingUp"],speedModifier,false,Enum.AnimationPriority.Movement)
+
 	for name,id in next, animTable do
-		if((typeof(id)=='string' or typeof(id)=='number') and not charObj:AnimLoaded(id))then
-			print(name,id)
+		if((typeof(id)=='number' or tonumber(id)) and not charObj:AnimLoaded(id))then
 			charObj:AddAnimation(string.lower(name),id,speedModifier,false,Enum.AnimationPriority.Movement)
 		end
 	end
@@ -147,6 +147,7 @@ function Character:AddAnimation(name,id,speed,looped,priority,StoppedFunc)
 		anim.AnimationId= ('rbxassetid://' .. id)
 	end
 	--warn(anim.AnimationId)
+	print(name, id)
 	local track = self.Animator:LoadAnimation(anim)
 	track.Name=name;
 	track.Looped=looped or false

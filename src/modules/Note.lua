@@ -519,6 +519,27 @@ function NoteClass.new(XMLModule:ModuleScript, Object:ImageLabel ,strumTime:numb
 		epicNote:AddSparrowXML(liveNoteXml,'redholdend', 'red hold end0000',24);
 		epicNote:AddSparrowXML(liveNoteXml,'blueholdend', 'blue hold end0000',24);
 		epicNote:PlayAnimation(maniaListThingy[epicNote.Mania].DirNames[noteData+1])
+	elseif epicNote.Type == 'Attack' then -- Herobrine Reborn Tales
+		local liveNoteXml = game.ReplicatedStorage.Modules.Assets.DeathNotes.attackNote.XML
+		epicNote.NoteObject.Image = game.ReplicatedStorage.Modules.Assets.DeathNotes.attackNote.Image
+		epicNote.Animation=Sprite.new(epicNote.NoteObject,false,1,true)
+		epicNote.MissPunish = true
+		epicNote.CanSustain = false
+		epicNote.shouldPress = true
+		setmetatable(epicNote,NoteClass)
+		epicNote:AddSparrowXML(liveNoteXml,'greenScroll', 'green0000',24,false);
+		epicNote:AddSparrowXML(liveNoteXml,'redScroll', 'red0000',24,false);
+		epicNote:AddSparrowXML(liveNoteXml,'blueScroll', 'blue0000',24,false);
+		epicNote:AddSparrowXML(liveNoteXml,'purpleScroll', 'purple0000',24,false);
+		epicNote:AddSparrowXML(liveNoteXml,'purplehold', 'purple hold piece0000',24);
+		epicNote:AddSparrowXML(liveNoteXml,'bluehold', 'blue hold piece0000',24);
+		epicNote:AddSparrowXML(liveNoteXml,'greenhold', 'green hold piece0000',24);
+		epicNote:AddSparrowXML(liveNoteXml,'redhold', 'red hold piece0000',24);
+		epicNote:AddSparrowXML(liveNoteXml,'purpleholdend', 'pruple end hold',24);
+		epicNote:AddSparrowXML(liveNoteXml,'greenholdend', 'green hold end0000',24);
+		epicNote:AddSparrowXML(liveNoteXml,'redholdend', 'red hold end0000',24);
+		epicNote:AddSparrowXML(liveNoteXml,'blueholdend', 'blue hold end0000',24);
+		epicNote:PlayAnimation(maniaListThingy[epicNote.Mania].DirNames[noteData+1])
 	elseif epicNote.Type == 'Sword' then -- Pibby corrupted
 		local liveNoteXml = game.ReplicatedStorage.Modules.Assets.DeathNotes.swordNote.XML
 		epicNote.NoteObject.Image = game.ReplicatedStorage.Modules.Assets.DeathNotes.swordNote.Image

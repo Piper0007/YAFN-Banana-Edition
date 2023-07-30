@@ -38,7 +38,6 @@ local DadBG,BFBG = script.Parent.realGameUI.Notes.DadBG,script.Parent.realGameUI
 local TimeBar = gameUI.TimeBar
 --local customScoreFormat = ""
 local GFSection = false
-local benginPos = {CFrame.new(), CFrame.new(), CFrame.new(), CFrame.new()}
 
 local noteScaleRatio = Vector2.new(448,684) -- TODO: do this programatically
 -- (Create a Frame with a size of 0,1280,0,720 w/ the aspectratioconstraint in it and get the absolutesize from it for this variable)
@@ -271,9 +270,9 @@ module.PlayerStats = {
 	MaxHealth = 2;
 	Score = 0;
 }
-module.OpponentSettings = {
-	OppIcon = nil;
-}
+
+-- Might be used in the future
+module.OpponentSettings = {}
 
 PlayerObjects.BF,PlayerObjects.Dad=nil,nil;
 PlayerObjects.BF2,PlayerObjects.Dad2=nil,nil;
@@ -453,7 +452,9 @@ function shakeScreen(intensity, duration)
 	local elapsed = 0
 	while elapsed < duration or songEnded do
 		if elapsed < duration then
-			snapCamera(offsetUI(intensity))
+			-- Screen shake was too intense so I am adjusting values
+
+			snapCamera(offsetUI(intensity/0.9))
 		end
 		elapsed += HB:Wait()
 	end
@@ -550,7 +551,6 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	events = {}
 	loadedModchartData = {}
 	eventNotes = {}
-	module.OpponentSettings.OppIcon=nil
 	NoteClass.specialNoteAnimQueue = {}
 	LoadingStatus.LoadedNotes = 0;
 	LoadingStatus.DataNotes = 0;
@@ -591,11 +591,6 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	camSpeed = speedModifier
 	instrSound.PlaybackSpeed=speedModifier
 	voiceSound.PlaybackSpeed=speedModifier
-
-	local sides = {"Left", "Right", "Left2", "Right2"}
-	for i = 1, #sides do
-		benginPos[i] = module.PositioningParts[sides[i]].CFrame
-	end
 
 	local camSizeX = cam.ViewportSize.X 
 	local data = require(songName)--songCache[songName] or require(songs:FindFirstChild(songName) or songs.Philly)
@@ -804,7 +799,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 		instrSound.PlaybackSpeed *= SongIdInfo.PlaybackSpeed
 		voiceSound.PlaybackSpeed *= SongIdInfo.PlaybackSpeed
 	end
-	
+
 	-- Cover the scree in black so that the player doesn't have to look at the game while it is loading
 	local flash = gameUI.realGameUI.Flash
 	flash.BackgroundTransparency = 0
@@ -957,7 +952,6 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 				Track:Stop(0)
 			end
 		end
-		local BFOffset = CFrame.new(0,0,0)
 
 		module.PositioningParts.Left2.CFrame = module.PositioningParts.Left.CFrame * CFrame.new(1.75,0,-2)
 		module.PositioningParts.Right2.CFrame = module.PositioningParts.Right.CFrame * CFrame.new(3,0,3)
@@ -1326,12 +1320,24 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 						{{songNotes[3], unpack(songNotes,4)}};
 					}
 
-					if #events > 0 then
-						events[1]["song"]["events"][#events[1]["song"]["events"]+1] = eventData
-					else
-						table.insert(events, {song = {events = {eventData}}})
-					end
+					if #events > 0 then -- hopefully this fixes that issue FOREVER
+						if events[1]["song"]["events"] then
+							table.move({eventData}, 1, #eventData, #events[1]["song"]["events"]+1, events[1]["song"]["events"])
+							--table.insert(events[1]["song"]["events"][#events+1], eventData)
+						end
+						--if table.find(events[1]["song"], "events") then
+						--	events[1]["song"]["events"][#events[1]] = eventData
+						--else
+						--	print(eventData)
 
+						--	--events[1]["song"]["events"][#events[1]+1]["song"]["events"] = eventData
+						--end
+
+					else
+
+						table.insert(events, {song = {events = {eventData}}})
+						--print(events)
+					end
 				end
 			end
 		end
@@ -1350,15 +1356,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	end
 
 	local processEvent = function (event, value1, value2,...)
-		local curEvent = typeof(event) == "table" and string.lower(event[1]) or string.lower(event)
-
-		for i,v in pairs(loadedModchartData) do
-			spawn(function(...)
-				if v.EventTrigger then
-					v.EventTrigger(curEvent, value1, value2, ...)
-				end
-			end)
-		end
+		local curEvent = typeof(event) == "table" and string.lower(event[1]) or string.lower(event)	
 
 		if curEvent == "set camera zoom" then
 			--camControls.BehaviourType = "Camera"
@@ -1370,11 +1368,10 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			local camZoom = 1 - tonumber(value1) or 0
 			local length = tonumber(value2) or 0.1
 			--defaultCamZoom = 1 - camZoom
-			local tweenType,tweenDir = ...
-			if tweenType == nil then
+			if ... == nil then
 				CameraTween = TS:Create(game.Workspace.Camera,TweenInfo.new(length,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{FieldOfView=70-(camZoom*25)})
 			else
-				CameraTween = TS:Create(game.Workspace.Camera,TweenInfo.new(length,tweenType,tweenDir),{FieldOfView=70-(camZoom*25)})
+				CameraTween = TS:Create(game.Workspace.Camera,TweenInfo.new(length, ...),{FieldOfView=70-(camZoom*25)})
 			end
 
 			--defaultCamZoom = 1 - camZoom
@@ -1387,20 +1384,17 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			return CameraTween
 		elseif curEvent == "add camera zoom" then
 			if module.settings.CameraZooms and camControls.hudZoom < 1.4 then
-				local camZoom = tonumber(value2) or 0.015
-				local hudZoom = tonumber(value1) or 0.03
-				camControls.camZoom += camZoom
-				camControls.hudZoom += hudZoom
+				camControls.hudZoom += tonumber(value1) or 0.03
+				camControls.camZoom += tonumber(value2) or 0.015
 			end
 		elseif curEvent == "camera follow pos" then
 			if shared.camFollow ~= nil then
 				local val1 = tonumber(value1) or 0
 				local val2 = tonumber(value2) or 0
-				
+
 				--camControls.ForcedPos = false
 				if val1 ~= 0 and val2 ~= 0 then
-					camControls.camOffset = CFrame.new(math.rad(val1/10),math.rad(val2/10),math.rad(0))
-					
+					camControls.camOffset = CFrame.new(math.rad(val1/10),math.rad(val2/10), 0)
 					--camControls.ForcedPos = true
 					--print(camControls.camOffset.X .. ', ' .. camControls.camOffset.Y)
 				end
@@ -1415,8 +1409,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 				if value2 == '' or value2 == nil then
 					value2 = '#FFFFFF'
 				end
-				local speed = tonumber(value1) or 1
-				module.flash(tostring(value2),speed,0)
+				module.flash(tostring(value2), tonumber(value1) or 1, 0)
 			end
 		elseif curEvent == "screen shake" then -- supposed to shake UI as well
 			--print("screen shaked at "..value1.." intensity for "..value2.." seconds") value1 can either be one number or two numbers separated by a comma
@@ -1455,14 +1448,13 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			end
 		elseif curEvent == "hey!" then
 			local value = 2
-			local name = string.lower(value1)
 			Switch()
 			:case('bf' or 'boyfriend' or '0', function()
 				value = 0
 			end)
 			:case('gf' or 'girlfriend' or '1', function()
 				value = 1
-			end)(name)
+			end)(string.lower(value1))
 			if value == 0 then
 				local char = PlayerObjects.BF
 				char:PlayAnimation("hey", true)
@@ -1471,7 +1463,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			end
 		elseif curEvent == "lane modifier" then
 			local lane = tonumber(value1)
-			local speed = tonumber(value2)
+			local speed = tonumber(value2)/speedModifier
 			--print("Lane "..lane.." was modified to "..speed)
 			local indx = 0
 			for i =1, #notes do
@@ -1482,16 +1474,14 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			end
 			for i =1, #unspawnedNotes do
 				if unspawnedNotes[i].NoteData == lane then
-					unspawnedNotes[i].ScrollMultiplier = speed/speedModifier
+					unspawnedNotes[i].ScrollMultiplier = speed
 				end
 				unspawnedNotes[i].InitialPos = getPosFromTime(unspawnedNotes[i].StrumTime)
 			end
 		elseif curEvent == "change scroll speed" then --['Change Scroll Speed', "Value 1: Scroll Speed Multiplier (1 is default)\nValue 2: Time it takes to change fully in seconds."],
 			if not module.settings.ForceSpeed then
-				local oldSpeed = initialSpeed
-				local speed = tonumber(value1) or 1
 				local duration = (tonumber(value2) or 0)/speedModifier
-				local newSpeed = (module.settings.CustomSpeed * speed)
+				local newSpeed = (module.settings.CustomSpeed * tonumber(value1) or 1)
 				local songSpeedTween = ((initialSpeed/.45)/songData.speed) * module.settings.CustomSpeed
 				local elapsed = 0
 				if duration <= 0 then
@@ -1512,6 +1502,14 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 					end)
 				end
 			end
+		end
+
+		for i,v in pairs(loadedModchartData) do
+			spawn(function(...)
+				if v.EventTrigger then
+					v.EventTrigger(curEvent, value1, value2, ...)
+				end
+			end)
 		end
 	end
 	module.processEvent = processEvent
@@ -1609,8 +1607,8 @@ function updateUI()
 	local scale = HPBarBG.Size.X.Scale*HPContainer.Size.X.Scale
 	local normalHP = module.PlayerStats.Health/module.PlayerStats.MaxHealth
 	local center = ((1-HPBarBG.Size.X.Scale) + (HPBarBG.Size.X.Scale * (HPContainer.Size.X.Scale/0.98)))/2
-	local bfoffset = gameUI.realGameUI.Notes.BF:GetAttribute("Offset") -- you can define this offset inside of a modchart using :SetAttribute("Offset", Vector3)
-	local dadoffset = gameUI.realGameUI.Notes.Dad:GetAttribute("Offset")
+	local bfoffset = gameUI.realGameUI.Notes.BF:GetAttribute("Offset") or CFrame.new() -- you can define this offset inside of a modchart using :SetAttribute("Offset", Vector3)
+	local dadoffset = gameUI.realGameUI.Notes.Dad:GetAttribute("Offset") or CFrame.new()
 	if flipMode then
 		HPBarG.Size = UDim2.fromScale((1-normalHP),1)
 		HPBarR.Size = UDim2.fromScale(normalHP,1)
@@ -1867,56 +1865,6 @@ function module.closeScript(name : string) -- When called it removes the specifi
 	end
 end
 
-local loadEvents = function()
-	if(songData.events)then
-		if(#songData.events > 0) then
-			for num, Time in pairs(songData.events) do
-				if type(Time[1]) ~= "number" then return end
-				Time[1] -= eventNoteEarlyTrigger(Time)
-			end
-			table.move(songData.events, 1, #songData.events, #eventNotes + 1, eventNotes)
-		end
-	end
-	for n = 1, #events do
-		if(#events > 0)then
-			local song = events[n].song
-			local loop = song.events ~= nil and song.events or song.notes or songData.notes
-			for i,event in pairs(loop) do
-				if type(event[1]) ~= "number" then
-					--local eve = event.sectionNotes -- uncommit this part if it works...
-					--for i = 1, #eve do
-					--	local eary = eventNoteEarlyTrigger(eve[i])
-					--	if eary~=nil then eve[i][1] -= eary end
-					--end
-					
-					
-					--warn("How did this get here?", event)
-					--table.remove(loop, event)
-				else
-					local eary = eventNoteEarlyTrigger(event)
-					if eary~=nil then event[1] -= eary end
-				end
-				--warn("Try moving the events to be inside the 'events' array")
-					--[[task.spawn(function()
-						event[1] -= eventNoteEarlyTrigger(event)
-						repeat task.wait() until (event[1] + Conductor.safeZoneOffset + module.settings.ChartOffset + (SongIdInfo.Offset or 0) <= Conductor.SongPos) or not generatedSong
-						if not generatedSong then return end
-						local venters = table.getn(event[2])
-						for i = 1, venters do
-							module.processEvent(event[2][i],event[2][i][2],event[2][i][3]);
-						end
-					end)]]
-			end
-			table.move(loop, 1, #loop, #eventNotes + 1, eventNotes)
-		end
-	end
-	table.sort(eventNotes, function(a,b)
-		return a[1] < b[1]
-	end)
-	
-	print('Events Loaded')
-end
-
 function checkEventNote(SongTime, offset)
 	local eventsLength = #eventNotes
 	if eventsLength > 0 then
@@ -1957,143 +1905,11 @@ function resync()
 	end
 end
 
-local function generateReceptors(player)
-
-	for i = 1,DirAmmo[songData.mania] do
-
-		local selNoteXml
-		local obj
-		if internalSettings.useDuoSkins then
-			selNoteXml = player == 1 and NoteXml.BF or NoteXml.Dad
-			obj = (player == 1 and internalSettings.useDuoSkins.BF or internalSettings.useDuoSkins.Dad):Clone()
-		else
-			selNoteXml = NoteXml
-			obj = NoteObject:Clone()
-		end
-
-		local babyArrow = Receptor.new(obj,true,2,true,noteScaleRatio)
-
-		babyArrow.Index = i
-		babyArrow.Direction = ""
-		babyArrow.Scale=Vector2.new(.7,.7) * (internalSettings.autoSize * module.settings.customSize)
-		if songData.mania ~= 0 then -- shaggy system
-			local nSuf = {"LEFT","DOWN","UP","RIGHT"}
-			local pPre = {"left","down","up","right"}
-			if songData.mania == 1 then
-				nSuf = {"LEFT","UP","RIGHT","LEFT","DOWN","RIGHT"}
-				pPre = {"left","up","right","yel","down","dark"}
-			elseif songData.mania == 2 then
-				nSuf = {"LEFT","DOWN","UP","RIGHT","SPACE","LEFT","DOWN","UP","RIGHT"}
-				pPre = {"left","down","up","right","white","yel","violet","black","dark"}
-			elseif songData.mania == 3 then
-				nSuf = {"LEFT","DOWN","SPACE","UP","RIGHT"}
-				pPre = {"left","down","white","up","right"}
-			elseif songData.mania == 4 then
-				nSuf = {"LEFT","UP","RIGHT","SPACE","LEFT","DOWN","RIGHT"}
-				pPre = {"left","up","right","white","yel","down","dark"}
-			elseif songData.mania == 5 then
-				nSuf = {"LEFT","DOWN","UP","RIGHT","LEFT","DOWN","UP","RIGHT"}
-				pPre = {"left","down","up","right","yel","violet","black","dark"}
-			end
-			babyArrow:AddSparrowXML(selNoteXml,'static', 'arrow' .. nSuf[i]);
-			babyArrow:AddSparrowXML(selNoteXml,'pressed', pPre[i] .. ' press', 24, false);
-			babyArrow:AddSparrowXML(selNoteXml,'confirm', pPre[i] .. ' confirm', 24, false);
-			babyArrow.Direction = nSuf[i] ~= "SPACE" and string.lower(nSuf[i]) or "up"
-		else -- vanilla system
-			if(i==1)then
-				babyArrow:AddSparrowXML(selNoteXml,'static', 'arrowLEFT');
-				babyArrow:AddSparrowXML(selNoteXml,'pressed', 'left press', 24, false);
-				babyArrow:AddSparrowXML(selNoteXml,'confirm', 'left confirm', 24, false);
-				babyArrow.Direction = "left"
-			elseif(i==2)then
-				babyArrow:AddSparrowXML(selNoteXml,'static', 'arrowDOWN');
-				babyArrow:AddSparrowXML(selNoteXml,'pressed', 'down press', 24, false);
-				babyArrow:AddSparrowXML(selNoteXml,'confirm', 'down confirm', 24, false);
-				babyArrow.Direction = "down"
-			elseif(i==3)then
-				babyArrow:AddSparrowXML(selNoteXml,'static', 'arrowUP');
-				babyArrow:AddSparrowXML(selNoteXml,'pressed', 'up press', 24, false);
-				babyArrow:AddSparrowXML(selNoteXml,'confirm', 'up confirm', 24, false);
-				babyArrow.Direction = "up"
-			elseif(i==4)then
-				babyArrow:AddSparrowXML(selNoteXml,'static', 'arrowRIGHT');
-				babyArrow:AddSparrowXML(selNoteXml,'pressed', 'right press', 24, false);
-				babyArrow:AddSparrowXML(selNoteXml,'confirm', 'right confirm', 24, false);
-				babyArrow.Direction = "right"
-			end
-		end
-		babyArrow:PlayAnimation("static")
-		--obj.ImageTransparency=1
-		--obj.Parent=DadNotesUI
-		obj.ZIndex=1
-		--babyArrow.DefaultX = (112 * (i-1)) - (player == 1 and (112 * (DirAmmo[songData.mania] - 4)) or 0) + 54
-		local arrowSpacing = 112
-		if module.settings.MiddleScroll then
-			babyArrow.DefaultX = (((noteScaleRatio.X/2)) - (((112 * DirAmmo[songData.mania])/2)*(internalSettings.autoSize * module.settings.customSize))) + ((112) * (i-1))-- - (112 * (DirAmmo[songData.mania] - 4))
-		else
-			if player == 1 then
-				babyArrow.DefaultX = (noteScaleRatio.X - ((112 * DirAmmo[songData.mania])*(internalSettings.autoSize * module.settings.customSize))) + (112 * (i-1))-- - (112 * (DirAmmo[songData.mania] - 4))
-			else
-				babyArrow.DefaultX = (112 * (i-1))
-			end
-		end
-		babyArrow.DefaultX += 54
-		babyArrow.DefaultY = Conductor.Downscroll and defaultScreenSize.Y - 80 or 50
-
-		babyArrow:SetPosition(babyArrow.DefaultX,babyArrow.DefaultY);
-
-		if(player==1)then
-			table.insert(flipMode and dadStrums or playerStrums,babyArrow)
-			table.insert(rightStrums,babyArrow)
-			if(flipMode)then
-				babyArrow.AnimationFinished:Connect(function(anim)
-					if(anim:sub(-7) == "confirm")then
-						babyArrow:PlayAnimation("static")
-					end
-				end)
-			end
-		else
-			table.insert(flipMode and playerStrums or dadStrums,babyArrow)
-			table.insert(leftStrums,babyArrow)
-			if(not flipMode)then
-				babyArrow.AnimationFinished:Connect(function(anim)
-					if(anim:sub(-7) == "confirm")then
-						babyArrow:PlayAnimation("static")
-					end
-				end)
-			end
-		end
-		table.insert(allReceptors,babyArrow)
-
-		--[[
-		local tw = game:service'TweenService':Create(
-			obj,
-			TweenInfo.new(
-				1,
-				Enum.EasingStyle.Circular,
-				Enum.EasingDirection.Out,
-				0,
-				false,
-				.5+(.2*i)
-			),
-			{
-				ImageTransparency= 1 - ((songData.mania ~= 0 and (player == 1 == flipMode)) and 0.2 or 1),
-			}
-		)
-		tw:Play()--]]
-
-		obj.Name=i
-	end
-end
-
-
-
-
 function module.startCountdown(customIcon)
 	--TS:Create(cam, TweenInfo.new(2.5/speedModifier,Enum.EasingStyle.Quad,Enum.EasingDirection.InOut),{FieldOfView = 70-(defaultCamZoom*25)}):Play()
-	
+
 	module.flash("#000000", 5/speedModifier, 0) -- Hide the game while it loads so that it doesn't look as bad
-	
+
 	if SongIdInfo.mapProps and repS.Maps:FindFirstChild(SongIdInfo.mapProps) then
 		mapProps.Parent = workspace.Maps
 	end
@@ -2114,12 +1930,54 @@ function module.startCountdown(customIcon)
 		--gameUI.realGameUI.Notes.HPBarBG.BarContainer.Visible = true
 		ScoreLabel.Visible = true
 	end
+
 	if module.settings.Modcharts then
-		if #events > 0 or songData.events and #songData.events > 0 then
+		if #events > 0 or songData.events and #songData.events > 0 then -- Event system 0.8.2 -- Remember to change that when changing the system
 			print("Loading Events...")
-			loadEvents()
+
+			local success, issue = pcall(function()
+				if(songData.events)then
+					if(#songData.events > 0) then
+						for num, Time in pairs(songData.events) do
+							if type(Time[1]) ~= "number" then return end
+							Time[1] -= eventNoteEarlyTrigger(Time)
+						end
+						table.move(songData.events, 1, #songData.events, #eventNotes + 1, eventNotes)
+					end
+				end
+				for n = 1, #events do
+					if(#events > 0)then
+						local song = events[n].song
+						local loop = song.events ~= nil and song.events or song.notes or songData.notes
+						for i,event in pairs(loop) do
+							if type(event[1]) ~= "number" then
+								--warn("How did this get here?", event)
+								--table.remove(loop, event)
+							else
+								local eary = eventNoteEarlyTrigger(event)
+								if eary~=nil then event[1] -= eary end
+
+								table.move({event}, 1, #event, #eventNotes + 1, eventNotes)
+							end
+						end
+
+						--table.move(loop, 1, #loop, #eventNotes + 1, eventNotes) -- This caused the system to add stuff that were not events
+					end
+				end
+
+				table.sort(eventNotes, function(a,b)
+					return a[1] < b[1]
+				end)
+			end)
+
+			if not success then
+				warn("Events failed to load!", issue)
+			else
+				print('Events Loaded')
+			end
 		end
 	end
+
 	--[[if module.settings.ChillMode and (module.PositioningParts.isOpponentAvailable == nil or game.Players.LocalPlayer.Name == 'pludo903') then
 		for _,button in next,gameUI.TouchScreen:GetChildren() do
 			UserInputBind.RemoveBind(button)
@@ -2130,6 +1988,134 @@ function module.startCountdown(customIcon)
 		end
 	end]]
 	startedCountdown=true
+
+	local function generateReceptors(player)
+		for i = 1,DirAmmo[songData.mania] do
+			local selNoteXml
+			local obj
+			if internalSettings.useDuoSkins then
+				selNoteXml = player == 1 and NoteXml.BF or NoteXml.Dad
+				obj = (player == 1 and internalSettings.useDuoSkins.BF or internalSettings.useDuoSkins.Dad):Clone()
+			else
+				selNoteXml = NoteXml
+				obj = NoteObject:Clone()
+			end
+
+			local babyArrow = Receptor.new(obj,true,2,true,noteScaleRatio)
+
+			babyArrow.Index = i
+			babyArrow.Direction = ""
+			babyArrow.Scale=Vector2.new(.7,.7) * (internalSettings.autoSize * module.settings.customSize)
+			if songData.mania ~= 0 then -- shaggy system
+				local nSuf = {"LEFT","DOWN","UP","RIGHT"}
+				local pPre = {"left","down","up","right"}
+				if songData.mania == 1 then
+					nSuf = {"LEFT","UP","RIGHT","LEFT","DOWN","RIGHT"}
+					pPre = {"left","up","right","yel","down","dark"}
+				elseif songData.mania == 2 then
+					nSuf = {"LEFT","DOWN","UP","RIGHT","SPACE","LEFT","DOWN","UP","RIGHT"}
+					pPre = {"left","down","up","right","white","yel","violet","black","dark"}
+				elseif songData.mania == 3 then
+					nSuf = {"LEFT","DOWN","SPACE","UP","RIGHT"}
+					pPre = {"left","down","white","up","right"}
+				elseif songData.mania == 4 then
+					nSuf = {"LEFT","UP","RIGHT","SPACE","LEFT","DOWN","RIGHT"}
+					pPre = {"left","up","right","white","yel","down","dark"}
+				elseif songData.mania == 5 then
+					nSuf = {"LEFT","DOWN","UP","RIGHT","LEFT","DOWN","UP","RIGHT"}
+					pPre = {"left","down","up","right","yel","violet","black","dark"}
+				end
+				babyArrow:AddSparrowXML(selNoteXml,'static', 'arrow' .. nSuf[i]);
+				babyArrow:AddSparrowXML(selNoteXml,'pressed', pPre[i] .. ' press', 24, false);
+				babyArrow:AddSparrowXML(selNoteXml,'confirm', pPre[i] .. ' confirm', 24, false);
+				babyArrow.Direction = nSuf[i] ~= "SPACE" and string.lower(nSuf[i]) or "up"
+			else -- vanilla system
+				if(i==1)then
+					babyArrow:AddSparrowXML(selNoteXml,'static', 'arrowLEFT');
+					babyArrow:AddSparrowXML(selNoteXml,'pressed', 'left press', 24, false);
+					babyArrow:AddSparrowXML(selNoteXml,'confirm', 'left confirm', 24, false);
+					babyArrow.Direction = "left"
+				elseif(i==2)then
+					babyArrow:AddSparrowXML(selNoteXml,'static', 'arrowDOWN');
+					babyArrow:AddSparrowXML(selNoteXml,'pressed', 'down press', 24, false);
+					babyArrow:AddSparrowXML(selNoteXml,'confirm', 'down confirm', 24, false);
+					babyArrow.Direction = "down"
+				elseif(i==3)then
+					babyArrow:AddSparrowXML(selNoteXml,'static', 'arrowUP');
+					babyArrow:AddSparrowXML(selNoteXml,'pressed', 'up press', 24, false);
+					babyArrow:AddSparrowXML(selNoteXml,'confirm', 'up confirm', 24, false);
+					babyArrow.Direction = "up"
+				elseif(i==4)then
+					babyArrow:AddSparrowXML(selNoteXml,'static', 'arrowRIGHT');
+					babyArrow:AddSparrowXML(selNoteXml,'pressed', 'right press', 24, false);
+					babyArrow:AddSparrowXML(selNoteXml,'confirm', 'right confirm', 24, false);
+					babyArrow.Direction = "right"
+				end
+			end
+			babyArrow:PlayAnimation("static")
+			--obj.ImageTransparency=1
+			--obj.Parent=DadNotesUI
+			obj.ZIndex=1
+			--babyArrow.DefaultX = (112 * (i-1)) - (player == 1 and (112 * (DirAmmo[songData.mania] - 4)) or 0) + 54
+			local arrowSpacing = 112
+			if module.settings.MiddleScroll then
+				babyArrow.DefaultX = (((noteScaleRatio.X/2)) - (((112 * DirAmmo[songData.mania])/2)*(internalSettings.autoSize * module.settings.customSize))) + ((112) * (i-1))-- - (112 * (DirAmmo[songData.mania] - 4))
+			else
+				if player == 1 then
+					babyArrow.DefaultX = (noteScaleRatio.X - ((112 * DirAmmo[songData.mania])*(internalSettings.autoSize * module.settings.customSize))) + (112 * (i-1))-- - (112 * (DirAmmo[songData.mania] - 4))
+				else
+					babyArrow.DefaultX = (112 * (i-1))
+				end
+			end
+			babyArrow.DefaultX += 54
+			babyArrow.DefaultY = Conductor.Downscroll and defaultScreenSize.Y - 80 or 50
+
+			babyArrow:SetPosition(babyArrow.DefaultX,babyArrow.DefaultY);
+
+			if(player==1)then
+				table.insert(flipMode and dadStrums or playerStrums,babyArrow)
+				table.insert(rightStrums,babyArrow)
+				if(flipMode)then
+					babyArrow.AnimationFinished:Connect(function(anim)
+						if(anim:sub(-7) == "confirm")then
+							babyArrow:PlayAnimation("static")
+						end
+					end)
+				end
+			else
+				table.insert(flipMode and playerStrums or dadStrums,babyArrow)
+				table.insert(leftStrums,babyArrow)
+				if(not flipMode)then
+					babyArrow.AnimationFinished:Connect(function(anim)
+						if(anim:sub(-7) == "confirm")then
+							babyArrow:PlayAnimation("static")
+						end
+					end)
+				end
+			end
+			table.insert(allReceptors,babyArrow)
+
+		--[[
+		local tw = game:service'TweenService':Create(
+			obj,
+			TweenInfo.new(
+				1,
+				Enum.EasingStyle.Circular,
+				Enum.EasingDirection.Out,
+				0,
+				false,
+				.5+(.2*i)
+			),
+			{
+				ImageTransparency= 1 - ((songData.mania ~= 0 and (player == 1 == flipMode)) and 0.2 or 1),
+			}
+		)
+		tw:Play()--]]
+
+			obj.Name=i
+		end
+	end
+
 	generateReceptors(1)
 	generateReceptors(2)
 	for i,v in next,rightStrums do
@@ -2294,18 +2280,20 @@ function module.startCountdown(customIcon)
 				)
 				tw.Completed:connect(function()
 					img:Destroy()
-					
+
 					--[[if generatedSong == false and instrSound.Playing == true then
 						instrSound:Stop()
 						voiceSound:Stop()
 					end]]--
 					pcall(game.Destroy,tw)
-					
-					if i == 4 then -- This plays when the countdown actually finishes
-						if not (module.PositioningParts.isOpponentAvailable)then
-							gameUI.LeaveSpotButton.Visible = true
+
+					delay(1, function()
+						if i == 4 then -- This plays when the countdown actually finishes
+							if not (module.PositioningParts.isOpponentAvailable)then
+								gameUI.LeaveSpotButton.Visible = true
+							end
 						end -- Prevents the player from ending the song before it starts
-					end
+					end)
 				end)
 				tw:Play()
 			end
@@ -2376,15 +2364,6 @@ function module.endSong()
 		end
 	end
 
-
-	--print(module.PositioningParts)
-	local sides = {"Left", "Right", "Left2", "Right2"}
-	for i = 1, #sides do
-		if table.find(module.PositioningParts, sides[i]) then
-			module.PositioningParts[sides[i]].CFrame = benginPos[i]
-		end
-	end
-
 	generatedSong=false
 	events = {}
 	eventNotes = {}
@@ -2441,8 +2420,6 @@ function module.endSong()
 	if PlayerObjects.Dad then PlayerObjects.Dad:Destroy() end
 	if PlayerObjects.BF2 then PlayerObjects.BF2:Destroy() end
 	if PlayerObjects.Dad2 then PlayerObjects.Dad2:Destroy() end
-
-	return {benginPos[1], benginPos[2], benginPos[3], benginPos[4]}
 end
 
 function module.startSong()
@@ -2466,10 +2443,10 @@ function module.startSong()
 		end	
 	end
 end
--- dusttale
+----dusttale
 local phantomActive = false
 local bonedCount = 0
--- sonic from the executable
+---- sonic from the executable
 local fogCount = 0
 local fogDrain = 0
 
@@ -2518,100 +2495,101 @@ function GoodHit(daNote)
 	local noteType = daNote.Type
 	if(not daNote.IsSustain)then
 		if noteType ~= "None" then
-			--if daNote.Type == "Bone" then
-			--	bonedCount += 1
-			--	gameUI.realGameUI.Dust.ImageTransparency = 1 - (bonedCount / 10)
-			--	playSound("rbxassetid://4735718618",4)
-			--	if bonedCount >= 10 then
-			--		module.Kill()
-			--	end
-			--	local thread = function()
-			--		local effectRunout = tick() + 35
-			--		repeat
-			--			RS.RenderStepped:Wait()
-			--		until tick() > effectRunout or not generatedSong
-			--		bonedCount -= 1
-			--		gameUI.realGameUI.Dust.ImageTransparency = 1 - (bonedCount / 10)
-			--	end
-			--	thread = coroutine.create(thread) 
-			--	coroutine.resume(thread)
-			--	if daNote.Destroy then daNote:Destroy() end	
-			--	return
-			--elseif noteType == "Knife" then
-			--	module.flash("ff3030",0.4)
-			--	playSound(5810686185,2)
-			--	module.PlayerStats.Health-=1
-			--elseif noteType == "Bullet" then
-			--	PlayerObjects.BF:PlayAnimation("dodge")
-			--elseif noteType == "BloodyKnife" then
-			--	module.flash("ff3030",0.4)
-			--	playSound(5810686185,2)
-			--elseif noteType == "Gem" then
-			--	module.PlayerStats.Health += 0.02
-			--elseif noteType == "Trap" then
-			--	local thread = function()
-			--		local healthDrained = 0
-			--		repeat
-			--			local delta = RS.RenderStepped:Wait()
-			--			local drainAmount = (6/1250) * (delta / (1/60))
-			--			module.PlayerStats.Health -= drainAmount
-			--			healthDrained += drainAmount
-			--		until healthDrained > 1 or not generatedSong
-			--	end
-			--	thread = coroutine.create(thread) 
-			--	coroutine.resume(thread)
-			--	if daNote.Destroy then daNote:Destroy() end	
-			--	return
-			--elseif daNote.Type == "phantom" then
-			--	local function doTrans()
-			--		if phantomActive == false then
-			--			phantomActive = true
-			--			local opacity = 0
-			--			wait()
-			--			repeat
-			--				local delta = RS.RenderStepped:Wait()
-			--				opacity += 0.01 * (delta/(1/60))
-			--				setGameUITransparency(opacity)
-			--			until opacity >= 0.95
-			--			opacity = 0.95 -- in case it goes above the mark
-			--			setGameUITransparency(opacity)
+			--[[
+			if daNote.Type == "Bone" then
+				bonedCount += 1
+				gameUI.realGameUI.Dust.ImageTransparency = 1 - (bonedCount / 10)
+				playSound("rbxassetid://4735718618",4)
+				if bonedCount >= 10 then
+					module.Kill()
+				end
+				local thread = function()
+					local effectRunout = tick() + 35
+					repeat
+						RS.RenderStepped:Wait()
+					until tick() > effectRunout or not generatedSong
+					bonedCount -= 1
+					gameUI.realGameUI.Dust.ImageTransparency = 1 - (bonedCount / 10)
+				end
+				thread = coroutine.create(thread) 
+				coroutine.resume(thread)
+				if daNote.Destroy then daNote:Destroy() end	
+				return
+			elseif noteType == "Knife" then
+				module.flash("ff3030",0.4)
+				playSound(5810686185,2)
+				module.PlayerStats.Health-=1
+			elseif noteType == "Bullet" then
+				PlayerObjects.BF:PlayAnimation("dodge")
+			elseif noteType == "BloodyKnife" then
+				module.flash("ff3030",0.4)
+				playSound(5810686185,2)
+			elseif noteType == "Gem" then
+				module.PlayerStats.Health += 0.02
+			elseif noteType == "Trap" then
+				local thread = function()
+					local healthDrained = 0
+					repeat
+						local delta = RS.RenderStepped:Wait()
+						local drainAmount = (6/1250) * (delta / (1/60))
+						module.PlayerStats.Health -= drainAmount
+						healthDrained += drainAmount
+					until healthDrained > 1 or not generatedSong
+				end
+				thread = coroutine.create(thread) 
+				coroutine.resume(thread)
+				if daNote.Destroy then daNote:Destroy() end	
+				return
+			elseif daNote.Type == "phantom" then
+				local function doTrans()
+					if phantomActive == false then
+						phantomActive = true
+						local opacity = 0
+						wait()
+						repeat
+							local delta = RS.RenderStepped:Wait()
+							opacity += 0.01 * (delta/(1/60))
+							setGameUITransparency(opacity)
+						until opacity >= 0.95
+						opacity = 0.95 -- in case it goes above the mark
+						setGameUITransparency(opacity)
 
-			--			phantomActive = tick() + 10
-			--			repeat
-			--				RS.RenderStepped:Wait()
-			--			until tick() > phantomActive
-			--			repeat
-			--				local delta = RS.RenderStepped:Wait()
-			--				opacity -= 0.01 * (delta/(1/60))
-			--				setGameUITransparency(opacity)
-			--			until opacity <= 0
-			--			opacity = 0
-			--			setGameUITransparency(opacity)
-			--			phantomActive = false
-			--		end
-			--	end
-			--	local wrappedThread = coroutine.wrap(doTrans)
-			--	wrappedThread()
-			--	playSound("rbxassetid://7757747076",2)
-			--	if daNote.Destroy then daNote:Destroy() end	
-			--	return
-			--elseif daNote.Type == "Karma" then
-			--	local thread = function()
-			--		local healthDrained = 0
-			--		repeat
-			--			HPBarG.BackgroundColor3 = Color3.new(1, 0, 0.701961)
-			--			local delta = RS.RenderStepped:Wait()
-			--			local drainAmount = (2/1250) * (delta / (1/60))
-			--			module.PlayerStats.Health -= drainAmount
-			--			healthDrained += drainAmount
-			--		until healthDrained > 0.5 or not generatedSong
-			--		HPBarG.BackgroundColor3 = Color3.fromRGB(102, 255, 51)
-			--	end
-			--	thread = coroutine.create(thread) 
-			--	coroutine.resume(thread)
-			--	if daNote.Destroy then daNote:Destroy() end	
-			--	return
-			--end
+						phantomActive = tick() + 10
+						repeat
+							RS.RenderStepped:Wait()
+						until tick() > phantomActive
+						repeat
+							local delta = RS.RenderStepped:Wait()
+							opacity -= 0.01 * (delta/(1/60))
+							setGameUITransparency(opacity)
+						until opacity <= 0
+						opacity = 0
+						setGameUITransparency(opacity)
+						phantomActive = false
+					end
+				end
+				local wrappedThread = coroutine.wrap(doTrans)
+				wrappedThread()
+				playSound("rbxassetid://7757747076",2)
+				if daNote.Destroy then daNote:Destroy() end	
+				return
+			elseif daNote.Type == "Karma" then
+				local thread = function()
+					local healthDrained = 0
+					repeat
+						HPBarG.BackgroundColor3 = Color3.new(1, 0, 0.701961)
+						local delta = RS.RenderStepped:Wait()
+						local drainAmount = (2/1250) * (delta / (1/60))
+						module.PlayerStats.Health -= drainAmount
+						healthDrained += drainAmount
+					until healthDrained > 0.5 or not generatedSong
+					HPBarG.BackgroundColor3 = Color3.fromRGB(102, 255, 51)
+				end
+				thread = coroutine.create(thread) 
+				coroutine.resume(thread)
+				if daNote.Destroy then daNote:Destroy() end	
+				return
+			end
 			if noteType == "kill" then
 				if module.settings.DeathEnabled then
 					module.Kill()
@@ -2621,6 +2599,7 @@ function GoodHit(daNote)
 					module.PlayerStats.Score-=13500;
 				end
 			end
+			]]
 		end
 		if(module.settings.HitSound)then
 			local h = script.Parent.Hit:Clone();
@@ -2636,12 +2615,14 @@ function GoodHit(daNote)
 	theStrum:PlayAnimation(theStrum.Animations[daNote.Type.."_confirm"] and daNote.Type.."_confirm" or "confirm",true)
 
 	if daNote.HealthLoss > 0 then
+		--[[
 		if(noteType=='Spam' and songData.song=='Last-stand' )then
 			daNote.HealthLoss=numLerp(0,1.35,module.PlayerStats.Health/2);
 			if(daNote.HealthLoss<.5)then
 				daNote.HealthLoss=.5
 			end
 		end
+		]]
 		module.PlayerStats.Health -= daNote.HealthLoss;
 		module.PlayerStats.Score-=math.round(daNote.HealthLoss*1000)
 		GameplayEvent:Fire("GhostTap")
@@ -2821,7 +2802,7 @@ function resetGroup(group)
 				PerformingSpots[i].Parent = workspace.PerformingSpots
 			end
 		end
-		
+
 		mapProps=nil
 	end)(group)
 end
@@ -3063,21 +3044,15 @@ function module.handleHit(strum,noteDiff,noteType,noteDir,sussy) -- this is what
 		end
 
 	end
-	--[[if(noteType=='Gem')then
+	--[[
+	if(noteType=='Gem')then
 		if(SongIdInfo.NoteGroup=='Gems') and module.PlayerStats.Health > .0425 then
 			module.PlayerStats.Health -= .0425;
 		end
-	elseif(noteType=='BlackGem' or noteType=='RuriaVoid')then
+	elseif(noteType=='BlackGem')then
 		module.PlayerStats.Health = .001;
-	elseif(noteType=='RuriaHurt')then
-		if(not flipMode)then
-			if(sussy)then
-				module.PlayerStats.Health -= .075;
-			else
-				module.PlayerStats.Health -= .125;
-			end
-		end
-	end]]
+	end
+	]]
 	local theStrum = dadStrums[noteDir+1]
 	theStrum:PlayAnimation(theStrum.Animations[noteType.."_confirm"] and noteType.."_confirm" or "confirm",true)
 	if(not sussy)then
@@ -3199,6 +3174,7 @@ function module.OpponentMissNote(strum,noteDiff,noteType,noteDir,sussy)
 		end))
 	end
 end
+
 function MissNote(note)
 	if note then
 		for i,v in pairs(loadedModchartData) do
@@ -3209,53 +3185,63 @@ function MissNote(note)
 			end))
 		end
 		if note.Type ~= "None" then
-			--if note.Type == "Knife" then
-			--	PlayerObjects.BF:PlayAnimation("dodge")
-			--	rates.miss-=1
-			--	module.PlayerStats.Health+=0.075
-			--elseif note.Type == "BloodyKnife" then
-			--	PlayerObjects.BF:PlayAnimation("dodge")
-			--elseif note.Type == 'MattCaution' or note.Type == "Spam" then
-			--	if module.settings.DeathEnabled then
-			--		module.Kill()
-			--		playSound(11003995387,2)
-			--	else
-			--		module.PlayerStats.Health-=1
-			--		module.PlayerStats.Score-=13500;
-			--	end
-			--elseif note.Type == "Bullet" and note.NoteGroup == "BlackBetrayal" then
-			--	module.PlayerStats.Health-=1
-			--elseif note.Type == "Static" then
-			--	module.PlayerStats.Health-=(2/5)
-			--	local object = gameUI.realGameUI.OverlaySprite
-			--	local static = Sprite.new(object,true,1,true)
-			--	object.Image = "rbxassetid://11089800126"
-			--	object.Visible = true
-			--	local xml = game.ReplicatedStorage.Modules.Assets.MiscXML["hitStatic.xml"]
-			--	static:AddSparrowXML(xml,"shabam","staticANIMATION",24,false,8).ImageId = "rbxassetid://11089800126"
-			--	static.GUI.Visible = true
-			--	static:PlayAnimation("shabam")
-			--	local MATH = random(1,2)
-			--	if MATH == 1 then
-			--		playSound(11090112135,2)
-			--	else
-			--		playSound(11090114488,2)
-			--	end
+			--[[if note.Type == "Knife" then
+				PlayerObjects.BF:PlayAnimation("dodge")
+				rates.miss-=1
+				module.PlayerStats.Health+=0.075
+			elseif note.Type == "BloodyKnife" then
+				PlayerObjects.BF:PlayAnimation("dodge")
+			elseif note.Type == 'MattCaution' or note.Type == "Spam" then
+				if module.settings.DeathEnabled then
+					module.Kill()
+					playSound(11003995387,2)
+				else
+					module.PlayerStats.Health-=1
+					module.PlayerStats.Score-=13500;
+				end
+			elseif note.Type == "Bullet" and note.NoteGroup == "BlackBetrayal" then
+				module.PlayerStats.Health-=1
+			elseif note.Type == "Static" then
+				module.PlayerStats.Health-=(2/5)
+				local object = gameUI.realGameUI.OverlaySprite
+				local static = Sprite.new(object,true,1,true)
+				object.Image = "rbxassetid://11089800126"
+				object.Visible = true
+				local xml = game.ReplicatedStorage.Modules.Assets.MiscXML["hitStatic.xml"]
+				static:AddSparrowXML(xml,"shabam","staticANIMATION",24,false,8).ImageId = "rbxassetid://11089800126"
+				static.GUI.Visible = true
+				static:PlayAnimation("shabam")
+				local MATH = random(1,2)
+				if MATH == 1 then
+					playSound(11090112135,2)
+				else
+					playSound(11090114488,2)
+				end
+			
+			else
+			
+			end
+			]]
 			module.PlayerStats.Health-=.075;
 			module.PlayerStats.Score-=50;
 		end
+		
 		if(songData.needsVoices)then
 			voiceSound.Volume = 0
 		end
+		
 		module.PlayerStats.Health-=.075;
 		module.PlayerStats.Score-=50;
+
+		combo=0; -- To disable ghost tapping move these lines out of this statement \/
+		rates.miss+=1
+		--playSound(6374202044,0.5) -- record scratch sound removed cause annoying
+		
+		UpdateAccuracy()
+		module.PlayerStats.Health=math.clamp(module.PlayerStats.Health,0,module.PlayerStats.MaxHealth)
+		GameplayEvent:Fire("NoteMiss",module.PlayerStats.Score,not not note)
 	end
-	combo=0;
-	rates.miss+=1
-	UpdateAccuracy()
-	module.PlayerStats.Health=math.clamp(module.PlayerStats.Health,0,module.PlayerStats.MaxHealth)
-	--playSound(6374202044,0.5) -- record scratch sound removed cause annoying
-	GameplayEvent:Fire("NoteMiss",module.PlayerStats.Score,not not note)
+	
 end
 -- TODO: play miss sound
 
@@ -3325,10 +3311,6 @@ function checkHeldKeys()
 	end
 end
 
-function doSign(sign,flip)
-
-end
-
 instrSound.DidLoop:connect(module.endSong)
 
 function beatHit()
@@ -3337,7 +3319,7 @@ function beatHit()
 	table.sort(notes,function(a,b)
 		return a.Y>b.Y
 	end)
-	
+
 	tweenIconSize(DadIcon,0.9 * (60/Conductor.BPM)/speedModifier)
 	tweenIconSize(BFIcon,0.9 * (60/Conductor.BPM)/speedModifier)
 
@@ -3355,7 +3337,7 @@ function beatHit()
 		camControls.hudZoom+=0.015 -- 0.03
 		camControls.camZoom+=0.03 -- 0.015
 	end
-	
+
 	for i,v in pairs(loadedModchartData) do
 		coroutine.resume(coroutine.create(function()
 			if v.BeatHit then
@@ -3437,7 +3419,7 @@ function stepHit()
 	if(totalSteps%4==0)then
 		beatHit()
 	end
-	
+
 	for i,v in pairs(loadedModchartData) do
 		coroutine.resume(coroutine.create(function()
 			if(v and v.StepHit)then -- checks if there is a modchart function for StepHit
@@ -3949,9 +3931,9 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 			end
 			-- TODO: Alpha, etc
 		end
-		
+
 		updateUI()
-		
+
 		if startedCountdown then
 			for i,v in pairs(loadedModchartData) do
 				coroutine.resume(coroutine.create(function()
@@ -4045,23 +4027,16 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 							char:PlayAnimation("sing" .. sDir[daNote.NoteData+1],true)
 						end	
 					end
-					--[[if(daNote.Type=='Gem')then
+					--[[
+					if(daNote.Type=='Gem')then
 						if(daNote.NoteGroup=='Gems') and module.PlayerStats.Health > .0425 then
 							module.PlayerStats.Health -= .0425;
 						end
-					elseif(daNote.Type=='RuriaHurt')then
-						if(not flipMode)then
-							if(daNote.IsSustain)then
-								module.PlayerStats.Health -= .075;
-							else
-								module.PlayerStats.Health -= .125;
-							end
-						end
-
-					elseif(daNote.Type=='BlackGem' or daNote.Type=='RuriaVoid')then
+					elseif(daNote.Type=='BlackGem')then
 						module.PlayerStats.Health = .001;
 					end
 					]]
+
 					if type(internalSettings.OpponentNoteDrain) == "number" then
 						if module.PlayerStats.Health < internalSettings.minHealth then
 							module.PlayerStats.Health -= 0
@@ -4274,7 +4249,7 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 		end
 		table.remove(events,1)
 	end]]
-	
+
 	-- HealthUI
 	if module.PlayerStats.Health < 0.4 then
 		plrIcon:PlayAnimation("Dead")
@@ -4334,7 +4309,7 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 		tostring(round(math.floor(accuracy), 5)),
 		tostring(likeRating)
 	)
-	
+
 	for i = #updateMotions,1,-1 do
 		local obj = updateMotions[i]
 		if(obj.Parent)then
@@ -4399,6 +4374,7 @@ RS:BindToRenderStep("CameraUpdate", Enum.RenderPriority.Camera.Value - 1, functi
 		camControls.zoom = 0
 		camControls.camOffset = CFrame.new()
 		justStarted = false
+		camControls.hudZoom = 0 -- this resets the FieldOfView
 	end
 
 	if(cam.ViewportSize~=lastViewport)then
@@ -4595,16 +4571,17 @@ function attributeFunctions.RandomizeNotes(value)
 	end
 end
 
-local descendants = workspace.Props:GetDescendants()
-for _, descendant in pairs(descendants) do
-	if descendant:IsA("Part") or descendant:IsA("Decal") or descendant:IsA("MeshPart") then
-		--if module.settings.HideProps == true then
-		--	descendant.Transparency = 1
-		--else
-		--	descendant.Transparency = 0
-		--end
-	end
-end
+--local descendants = workspace.Props:GetDescendants()
+--for _, descendant in pairs(descendants) do
+--	if descendant:IsA("Part") or descendant:IsA("Decal") or descendant:IsA("MeshPart") then
+--		--if module.settings.HideProps == true then
+--		--	descendant.Transparency = 1
+--		--else
+--		--	descendant.Transparency = 0
+--		--end
+--	end
+--end
+
 function module.Kill()
 	--[[for i = 1, #loadedModchartData do
 		if loadedModchartData[i] and loadedModchartData[i].cleanUp then

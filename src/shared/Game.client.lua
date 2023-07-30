@@ -35,7 +35,7 @@ end
 shared.effects={}
 
 local RS = game:GetService("ReplicatedStorage")
-local	 RunS = game:GetService("RunService")
+local RunS = game:GetService("RunService")
 local TS = game:GetService("TextService")
 local UIS = game:GetService("UserInputService")
 local HS = game:GetService("HttpService")
@@ -55,6 +55,13 @@ local remote = RS.MultiplayerHandler or RS:FindFirstChild("MultiplayerHandler")
 local InfoRetriever = RS.InfoRetriever or RS:WaitForChild("InfoRetriever")
 local GameplayStage = workspace:FindFirstChild("StageRoom")
 local plr = game:GetService("Players").LocalPlayer
+
+local spotPos = {
+	BF = CFrame.new(),
+	Dad = CFrame.new(),
+	BF2 = CFrame.new(),
+	Dad2 = CFrame.new()
+}
 
 local Settings = {
 	SpeedModifier = 1
@@ -118,6 +125,9 @@ local function InitializeGame(Module, PlayerMode, plrs)
 		if Settings[Name] == nil then continue end
 		Settings[Name] = Value
 	end
+
+	local songSpeed = InfoRetriever:InvokeServer(0x4,GameHandler.PositioningParts.Spot)
+	Settings.SpeedModifier = songSpeed
 	--[[
 	if altPlayer and PlayerMode == "Single" then
 		UserInputBindables.ClearBinds("QuitSpot")
@@ -257,6 +267,7 @@ UIHandler.SelectModeEvent:Connect(function(mode, av)
 end)
 
 UIHandler.SongPlayEvent:Connect(function(Module, Mode, av)
+	remote:FireServer(0x6, GameHandler.settings.PlaybackSpeed)
 	remote:FireServer(0x1,(Module),PositioningParts.Spot, Settings) -- send song loading signal
 	for Name,_ in next,GameHandler.settings.MenuControls do
 		if Name == "QuitSpot" then continue end
@@ -324,6 +335,12 @@ remote.OnClientEvent:Connect(function(signalType,...)
 			PositioningParts.Right2 = Dad2
 		end
 
+		spotPos = {
+			BF.CFrame,
+			Dad.CFrame,
+			BF2.CFrame,
+			Dad2.CFrame
+		}
 
 		PositioningParts.AccuracyRate = ARO
 		PositioningParts.Camera = CamPart
@@ -345,7 +362,7 @@ remote.OnClientEvent:Connect(function(signalType,...)
 		if isOwner then
 			return
 		end
-		local Settings = {SpeedModifier=1}
+		InfoRetriever:InvokeServer()
 		local val,songToPlay,compRemote
 		repeat
 			val,songToPlay = remote.OnClientEvent:Wait()
@@ -380,18 +397,16 @@ remote.OnClientEvent:Connect(function(signalType,...)
 			end
 		end
 		local success, issue = pcall(function()
-			sidesPos = GameHandler.endSong()
+			GameHandler.endSong()
+
+			local parts = {"Boyfriend", "Dad", "Boyfriend2", "Dad2"}
+			for i = 1, #parts do
+				local part = PositioningParts.Spot:FindFirstChild(parts[i])
+				part.CFrame = spotPos[i]
+			end
 		end)
 		if issue then
 			warn(issue)
-		end
-		local parts = {"Boyfriend", "Dad", "Boyfriend2", "Dad2"}
-		wait(0.1)
-		for i = 1, #parts do
-			local part = PositioningParts.Spot:FindFirstChild(parts[i])
-			if sidesPos[i]:IsA("Part") then
-				part.CFrame = sidesPos[i]
-			end
 		end
 		PositioningParts.Spot = nil
 		PositioningParts.Left = nil
