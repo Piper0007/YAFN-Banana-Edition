@@ -10,6 +10,21 @@ This is required when adding new songs as it requires the Instrumental sounds to
 </details>
 
 <details>
+<summary>How should it look?</summary>
+
+```
+Each songId follows a strict format in order for the game to find and retrieve the data for each song.
+
+It would look something like this:
+```
+```LiveScript
+	["songName"] = {
+		Instrumental = soundID;
+	};
+```
+</details>
+
+<details>
 <summary>List of all variables</summary>
   
 ````LiveScript
