@@ -86,7 +86,9 @@ Value 2 is the duration or speed at which the scroll changes speed (if it is les
 How to add Events
 </summary>
 
-Nothing here yet :/
+Events will automatically apply when the events for the song is inside the module script that contains notes.
+However, if you want to import the events file you should make a module script named "events" inside the individual song folder.
+Reminder, all of this will be located in "ReplicatedStorage > Modules > Songs".
 </details>
 
 
