@@ -477,6 +477,30 @@ function NoteClass.new(XMLModule:ModuleScript, Object:ImageLabel ,strumTime:numb
 		epicNote:AddSparrowXML(DeathNoteXml,'purpleholdend', 'pruple end hold0000',24,true);
 		epicNote:AddSparrowXML(DeathNoteXml,'purplehold', 'purple hold piece0000',24,true);
 		epicNote:PlayAnimation(maniaListThingy[epicNote.Mania].DirNames[noteData+1])
+	elseif epicNote.Type == 'Punch' then -- Rev Mixed
+		epicNote.CanSustain = false
+		epicNote.MissPunish = true
+		epicNote.shouldPress = true
+		local DeathNoteXml = game.ReplicatedStorage.Modules.Assets.DeathNotes["revPunch"].XML
+		epicNote.NoteObject.Image = game.ReplicatedStorage.Modules.Assets.DeathNotes["revPunch"].Image
+		epicNote.Animation=Sprite.new(epicNote.NoteObject,false,1,true)
+		setmetatable(epicNote,NoteClass)
+		epicNote:AddSparrowXML(DeathNoteXml,'greenScroll', 'left0000',24,false);
+		epicNote:AddSparrowXML(DeathNoteXml,'redScroll', 'left0000',24,false);
+		epicNote:AddSparrowXML(DeathNoteXml,'blueScroll', 'left0000',24,false);
+		epicNote:AddSparrowXML(DeathNoteXml,'purpleScroll', 'left0000',24,false);
+		if epicNote.Mania >= 0 then
+			epicNote:AddSparrowXML(DeathNoteXml,'greenScroll', 'left0000',24,false);
+			epicNote:AddSparrowXML(DeathNoteXml,'redScroll', 'left0000',24,false);
+			epicNote:AddSparrowXML(DeathNoteXml,'blueScroll', 'left0000',24,false);
+			epicNote:AddSparrowXML(DeathNoteXml,'purpleScroll', 'left0000',24,false);
+			epicNote:AddSparrowXML(DeathNoteXml,'yellowScroll', 'left0000',24,false);
+			epicNote:AddSparrowXML(DeathNoteXml,'darkScroll', 'left0000',24,false);
+			epicNote:AddSparrowXML(DeathNoteXml,'blackScroll', 'left0000',24,false);
+			epicNote:AddSparrowXML(DeathNoteXml,'whiteScroll', 'left0000',24,false);
+			epicNote:AddSparrowXML(DeathNoteXml,'violetScroll', 'left0000',24,false);
+		end
+		epicNote:PlayAnimation(maniaListThingy[epicNote.Mania].DirNames[noteData+1])
 	elseif epicNote.Type == 'Bullet' then -- accelerant
 		local liveNoteXml = game.ReplicatedStorage.Modules.Assets.MiscXML["Bullet.xml"]
 		epicNote.NoteObject.Image = game.ReplicatedStorage.Modules.Assets.DeathNotes["Bullet"].Image

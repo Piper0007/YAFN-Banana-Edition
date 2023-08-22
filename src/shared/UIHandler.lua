@@ -422,6 +422,8 @@ function UIHandler.MoveToMod(ModName,silent) -- mod change
 	if not silent then ScreenGui.UI.Accept:Play() end
 	local SongInfoTable = SongInfo[ModName]
 	CreditsText.Text = SongInfoTable and SongInfoTable.Description or "[ MISSING CREDITS ]"
+	SPBack.Image = SongInfoTable.BGImage or "rbxassetid://7456453307"
+	MPBack.Image = SongInfoTable.BGImage or "rbxassetid://7456453307"
 	TwS:Create(SPBack,twAnimInfo,{
 		ImageColor3 = SongInfoTable and (SongInfoTable.BGColor or SongInfoTable.OBJPR_TextColor3) or Color3.new(0.156863, 0.156863, 0.156863),
 		BackgroundColor3 = SongInfoTable and (SongInfoTable.BGColor and (SongInfoTable.BGColor2) or SongInfoTable.OBJPR_TextStrokeColor3) or Color3.new(0.105882, 0.105882, 0.105882)
@@ -988,7 +990,7 @@ end)
 -- checkerboard pattern move thing
 
 -- basic settings, idk
-local topPatternImgSize = Vector2.new(1024,1024) -- based on the maximum roblox image size
+local topPatternImgSize = Vector2.new(2,2) -- based on the maximum roblox image size
 local bottomPatternImgSize = Vector2.new(2,2)
 local squareSize = Vector2.new(50,50) -- doesn't necesarily needs to be a square
 local speedFactor = Vector2.new(8,7)
@@ -1709,12 +1711,11 @@ function UIHandler.InitializeSettings()
 		end)
 		CategoryButton.Visible = true
 		CategoryButton.Parent = scrollCategory
-		print(index)
 		categoryButtons[index] = CategoryButton
 	end
 	-- console stuff
 	for Index,obj in next,categoryButtons do
-		print(Index,type(Index))
+		--print(Index,type(Index))
 		obj.NextSelectionDown = categoryButtons[Index+1]
 		obj.NextSelectionUp = categoryButtons[Index-1]
 	end

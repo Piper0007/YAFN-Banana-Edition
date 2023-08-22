@@ -1521,44 +1521,45 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	table.sort(unspawnedNotes,function(a,b)
 		return a.StrumTime<b.StrumTime
 	end)
-
+	
+	-- I should instead preload images by making decals behind the loading screen
 	if SongIdInfo.PreloadImages then
+		local function makePreloadingImage(name, imageId, location)
+			local newImage = Instance.new("ImageLabel")
+			newImage.ZIndex = 4
+			newImage.Image = tostring(imageId)
+			newImage.Parent = location
+			newImage.Size = UDim2.new(.1, 0, .1, 0) -- Small
+			newImage.Visible = true
+
+			local waitTime = 0
+
+			while waitTime > .8 do -- Waits at least .8 seconds (not sure what the optimal time is though)
+				waitTime += HB:Wait()
+			end
+
+			LoadingStatus.PreloadedImages+=1; -- Track that an image loaded
+			newImage:Destroy()
+		end
+
+		for i,v in pairs(SongIdInfo.PreloadImages) do
+			makePreloadingImage(tostring(i), v, gameUI.realGameUI.Flash)
+		end
+		-- Old system that doesn't do much good...
+		--[[
 		game:GetService('ContentProvider'):PreloadAsync(SongIdInfo.PreloadImages, function()
 			LoadingStatus.PreloadedImages+=1
 		end)
+		]]
 	end
+	
+	-- This preload system works well
 	if SongIdInfo.PreloadSounds then
 		for i = 1, #SongIdInfo.PreloadSounds do
 			playSound(SongIdInfo.PreloadSounds[i], 0.0001)
 		end
 	end
 
-	-- FAILDED PRELOADING SYSTEM
-	--local imagesList = {}
-	--for i =1, #unspawnedNotes do
-	--	if not(unspawnedNotes[i].NoteObject.IsLoaded) and not(unspawnedNotes[i].NoteObject.Image == imagesList[table.find(imagesList,unspawnedNotes[i].NoteObject.Image)]) and module.settings.preloadDeathNotes and not(unspawnedNotes[i].Type == "None") then
-	--		table.insert(imagesList,unspawnedNotes[i].NoteObject.Image)
-	--		print(imagesList[table.find(imagesList,unspawnedNotes[i].NoteObject.Image)])
-	--	end
-	--end
-	--for i = 1, #imagesList do
-	--	if table.find(imagesList,imagesList[i-1]) or table.find(imagesList,imagesList[i-2]) == table.find(imagesList,imagesList[i]) then
-	--		table.remove(imagesList,i)
-	--	end
-	--end
-	--print(imagesList[table.find(imagesList,imagesList[1])])
-	--print(imagesList)
-	--for i = 1, #imagesList do
-	--	local image = gameUI.PreloadingImage:Clone()
-	--	image.Parent = gameUI
-	--	local waitTime = 0 
-	--	--image.Name = notes[i].Type
-	--	image.Image = imagesList[i]
-	--	repeat
-	--		task.wait(.5)
-	--		waitTime+=.5
-	--	until image.IsLoaded == true or waitTime==4
-	--end
 	if SongIdInfo.CameraPlayerFocus then
 		module.PositioningParts.CameraPlayer = true
 		module.PositioningParts.e = PlayerObjects.BF.Obj.PrimaryPart
@@ -2807,6 +2808,80 @@ function resetGroup(group)
 	end)(group)
 end
 
+-- This is too much reassurance checks, I should make this happen some other time and not during the song
+-- Made this function to relieve clutter from the ScorePopup function and allow for people to make noteSplashes for both sides
+local function spawnNoteSplash(note)
+	local id = note.NoteData+1
+	local texture = "noteSplashes"
+	local songMania = DirAmmo[songData.mania]
+	if note.NoteSplashSkin ~= nil and note.NoteSplashSkin ~= "None" then
+		texture = note.NoteSplashSkin
+	elseif SongIdInfo.NoteSplashSkin ~= nil then
+		texture = SongIdInfo.NoteSplashSkin
+	end
+
+	local obj2
+	if typeof(texture) == "string" and repS.Modules.Assets["noteSkins"..songMania.."K"]:FindFirstChild(texture) then
+		obj2 = repS.Modules.Assets["noteSkins"..songMania.."K"][texture]:Clone()
+	elseif texture:IsA("ImageLabel") then
+		obj2 = texture:Clone()
+	else
+		warn("Not a valid note splash, must be a ImageLabel or a NoteSplash name")
+		return -- Prevent the game from reading beyond this line when the notesplash isn't valid
+	end
+
+	local xml = obj2.XML
+
+	local animNum = math.random(1, 2)
+	local delayT = math.random(-2, 2)
+	local setScale = (internalSettings.autoSize * module.settings.customSize)
+	local thePlayerStrum = playerStrums[id]
+	local splash = Receptor.new(obj2, true, obj2:GetAttribute('scale') or 1.85, true, noteScaleRatio)
+	splash.GUI.ImageRectSize = splash.GUI.ImageRectSize * 2
+	splash.Index = id
+	splash.Direction = ""
+	splash.Scale=Vector2.new(.7,.7) * setScale
+
+	if(id==1)then
+		splash:AddSparrowXML(xml, 'splash 1', "note splash purple " .. animNum, 24 + delayT * speedModifier,false)
+		splash.Direction = "left"
+	elseif(id==2)then
+		splash:AddSparrowXML(xml, 'splash 2', "note splash blue " .. animNum, 24 + delayT * speedModifier,false)
+		splash.Direction = "down"
+	elseif(id==3)then
+		splash:AddSparrowXML(xml, 'splash 3', "note splash green " .. animNum, 24 + delayT * speedModifier,false)
+		splash.Direction = "up"
+	elseif(id==4)then
+		splash:AddSparrowXML(xml, 'splash 4', "note splash red " .. animNum, 24 + delayT * speedModifier,false)
+		splash.Direction = "right"
+	end
+
+	local arrowSpacing = 112
+	if module.settings.MiddleScroll then
+		splash.DefaultX = (((noteScaleRatio.X/2)) - (((112 * songMania)/2)*setScale)) + ((112) * (id-1))-- - (112 * (DirAmmo[songData.mania] - 4))
+	else
+		if flipMode == false then
+			splash.DefaultX = (noteScaleRatio.X - ((112 * songMania)*setScale)) + (112 * (id-1))-- - (112 * (DirAmmo[songData.mania] - 4))
+		else
+			splash.DefaultX = (112 * (id-1))
+		end
+	end
+	splash.DefaultX = id*54
+	splash.DefaultY = Conductor.Downscroll and defaultScreenSize.Y - 80 or 50
+
+	obj2.Parent=(flipMode and DadNotesUI or BFNotesUI)
+
+	splash.Alpha = thePlayerStrum.Alpha
+
+	splash:SetPosition(thePlayerStrum.X,thePlayerStrum.Y)
+	splash:PlayAnimation('splash ' .. id, false)
+	obj2.Name = "Splash " .. id
+	delay(((24 + delayT)/60)/speedModifier,function()
+		obj2:Destroy()
+		splash:Destroy()
+	end)
+end
+
 local ratingNamesSize = {
 	sick = Vector2.new(599,202);
 	good = Vector2.new(549,183);
@@ -2824,71 +2899,7 @@ function ScorePopup(noteDiff, note)
 
 	if rating == "sick" then
 		if module.settings.noteSplashes then
-			local id = note.NoteData+1
-			local texture = "noteSplashes"
-			if note.NoteSplashSkin ~= nil then
-				texture = note.NoteSplashSkin
-			elseif SongIdInfo.NoteSplashSkin ~= nil then
-				texture = SongIdInfo.NoteSplashSkin
-			end
-			if repS.Modules.Assets["noteSkins"..DirAmmo[songData.mania].."K"]:FindFirstChild(texture) or type(texture) ~= "string" and not (note.NoteSplashSkin == "None") then
-				local obj2
-				if typeof(texture) == "string" then
-					obj2 = repS.Modules.Assets["noteSkins"..DirAmmo[songData.mania].."K"][texture]:Clone()
-				elseif texture:IsA("ImageLabel") then
-					obj2 = texture:Clone()
-				end
-
-				local scale = obj2:GetAttribute('scale') or 1.85
-				local xml = obj2.XML
-
-				local animNum = math.random(1, 2)
-				local delayT = math.random(-2, 2)
-				local splash = Receptor.new(obj2,true,scale,true,noteScaleRatio)
-				splash.GUI.ImageRectSize = splash.GUI.ImageRectSize * 2
-				splash.Index = id
-				splash.Direction = ""
-				splash.Scale=Vector2.new(.7,.7) * (internalSettings.autoSize * module.settings.customSize)
-
-				if(id==1)then
-					splash:AddSparrowXML(xml, 'splash 1', "note splash purple " .. animNum, 24 + delayT * speedModifier,false)
-					splash.Direction = "left"
-				elseif(id==2)then
-					splash:AddSparrowXML(xml, 'splash 2', "note splash blue " .. animNum, 24 + delayT * speedModifier,false)
-					splash.Direction = "down"
-				elseif(id==3)then
-					splash:AddSparrowXML(xml, 'splash 3', "note splash green " .. animNum, 24 + delayT * speedModifier,false)
-					splash.Direction = "up"
-				elseif(id==4)then
-					splash:AddSparrowXML(xml, 'splash 4', "note splash red " .. animNum, 24 + delayT * speedModifier,false)
-					splash.Direction = "right"
-				end
-
-				local arrowSpacing = 112
-				if module.settings.MiddleScroll then
-					splash.DefaultX = (((noteScaleRatio.X/2)) - (((112 * DirAmmo[songData.mania])/2)*(internalSettings.autoSize * module.settings.customSize))) + ((112) * ((note.NoteData+1)-1))-- - (112 * (DirAmmo[songData.mania] - 4))
-				else
-					if flipMode == false then
-						splash.DefaultX = (noteScaleRatio.X - ((112 * DirAmmo[songData.mania])*(internalSettings.autoSize * module.settings.customSize))) + (112 * ((note.NoteData+1)-1))-- - (112 * (DirAmmo[songData.mania] - 4))
-					else
-						splash.DefaultX = (112 * (id-1))
-					end
-				end
-				splash.DefaultX = (id)*54
-				splash.DefaultY = Conductor.Downscroll and defaultScreenSize.Y - 80 or 50
-
-				obj2.Parent=(flipMode and DadNotesUI or BFNotesUI)
-
-				splash.Alpha = playerStrums[id].Alpha
-
-				splash:SetPosition(playerStrums[id].X,playerStrums[id].Y)
-				splash:PlayAnimation('splash ' .. id, false)
-				obj2.Name = "Splash " .. id
-				delay(((24 + delayT)/60)/speedModifier,function()
-					obj2:Destroy()
-					splash:Destroy()
-				end)
-			end
+			spawnNoteSplash(note)
 		end
 	end
 	module.PlayerStats.Score+=intScore
@@ -3932,8 +3943,6 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 			-- TODO: Alpha, etc
 		end
 
-		updateUI()
-
 		if startedCountdown then
 			for i,v in pairs(loadedModchartData) do
 				coroutine.resume(coroutine.create(function()
@@ -4318,8 +4327,10 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 			table.remove(updateMotions,i)
 		end
 	end
-
+	-- Make sure the health updates before the UI so that the health healthbar doesn't go past 1 or below 0
 	module.PlayerStats.Health=math.clamp(module.PlayerStats.Health,0,module.PlayerStats.MaxHealth)
+	
+	updateUI()
 	if module.PlayerStats.Health <= 0 and module.settings.DeathEnabled then
 		module.Kill()
 	end
