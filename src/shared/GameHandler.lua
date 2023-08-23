@@ -87,6 +87,7 @@ local combo = 0;
 local opponentCombo = 0;
 local speedModifier = 1;
 local flipMode=false;
+local validScore = true;
 local attributeFunctions = {}
 local camZooming = false
 local defaultCamZoom = .05
@@ -591,6 +592,14 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	camSpeed = speedModifier
 	instrSound.PlaybackSpeed=speedModifier
 	voiceSound.PlaybackSpeed=speedModifier
+
+	-- Check player settings so that the player can "Advantages" to get a better score
+	validScore = true
+	if module.settings.PlaybackSpeed ~= 1 then
+		validScore = false
+	elseif module.settings.ChillMode then
+		validScore = false
+	end
 
 	local camSizeX = cam.ViewportSize.X 
 	local data = require(songName)--songCache[songName] or require(songs:FindFirstChild(songName) or songs.Philly)
@@ -2321,7 +2330,44 @@ end
 --voiceSound:Stop()
 --end
 function module.endSong()
-	--local songPlayed = tostring(songData.song) .. "-" .. tostring(curSong.Name)
+	-- Save Song Data
+	if shared.song and validScore then
+		-- Only save the score on right side
+		if not flipMode then
+			local songPlayed = tostring(songData.song)
+			local saveGame = false
+			-- Check if there is previous save data
+			if module.settings.SongData[songPlayed] then
+				-- Check for the difficulty save
+				if module.settings.SongData[songPlayed][shared.song.Name] then
+					if module.PlayerStats.Score > tonumber(module.settings.SongData[songPlayed][shared.song.Name][1]) then
+						saveGame = true
+						-- Replace previous song data
+						module.settings.SongData[songPlayed][shared.song.Name] = {
+							tostring(module.PlayerStats.Score),
+							tostring(accuracy)
+						}
+					end
+				end
+			else
+				-- Make new save data
+				saveGame = true
+				local saveThis = {
+					[shared.song.Name] = {
+						tostring(module.PlayerStats.Score), 
+						tostring(accuracy)
+					};
+				};
+				--table.insert(module.settings.SongData, songPlayed)
+				module.settings.SongData[songPlayed] = saveThis
+			end
+
+			if saveGame then
+				-- Save the data
+				repS.InfoRetriever:InvokeServer(0x2,module.settings)
+			end
+		end
+	end
 	--if #module.settings.SongScores > 0 then
 	--	for i = 1, #module.settings.SongScores do
 	--		--print(module.PlayerStats.Score)

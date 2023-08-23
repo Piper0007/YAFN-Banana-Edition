@@ -108,8 +108,8 @@ end
 --]]
 local inputTest = 1e+16
 local wtf = wasteOfTime.EncodeNumber(inputTest)
-print("EncodedOutput:",#wtf,wtf:byte(1,-1))
-print(wasteOfTime.DecodeNumber(wtf))
+--print("EncodedOutput:",#wtf,wtf:byte(1,-1))
+--print(wasteOfTime.DecodeNumber(wtf))
 
 local function funnySH(signalType,...)
 	if signalType == "SpotJoin" then
@@ -501,8 +501,9 @@ FuncRemote.OnServerInvoke = function(plr,msgType,...)
 				if SettingName == "Keybinds" then
 					-- something, idk
 				end
-				if SettingName == "SongScores" then
-					print(Value)
+				if SettingName == "SongData" then
+					-- Marker
+					cacheSettings[SettingName] = Value
 				end
 				cacheSettings[SettingName] = Value
 				continue
@@ -621,18 +622,21 @@ end)
 
 Plrs.PlayerRemoving:Connect(function(plr)
 	local clientSettings = plrSettingsCache[plr.UserId]
-
+	if clientSettings[1] then
+		table.remove(clientSettings, 1)
+	end
 	local clientKeyBinds = clientSettings.Keybinds
-	for Mania,Directions in next,clientKeyBinds do
-
-		for Direction, Keycodes in next,Directions do
-			table.foreach(Keycodes,function(Index,Keycode)
-				if typeof(Keycode) == "EnumItem" then
-					Keycodes[tostring(Index)] = Keycode.Name
-				elseif type(Keycode) == "string" then
-					Keycodes[tostring(Index)] = Keycode
-				end
-			end) -- oops
+	if clientKeyBinds then
+		for Mania,Directions in next,clientKeyBinds do
+			for Direction, Keycodes in next,Directions do
+				table.foreach(Keycodes,function(Index,Keycode)
+					if typeof(Keycode) == "EnumItem" then
+						Keycodes[tostring(Index)] = Keycode.Name
+					elseif type(Keycode) == "string" then
+						Keycodes[tostring(Index)] = Keycode
+					end
+				end) -- oops
+			end
 		end
 	end
 	print("Saved settings.",clientSettings)

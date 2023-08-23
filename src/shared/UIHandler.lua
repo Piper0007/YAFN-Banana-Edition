@@ -331,6 +331,7 @@ do
 		ModButton.ButtonObject.MouseButton1Click:Connect(function()
 			UIHandler.MoveToMod(ModName)
 		end)
+		
 		-- Customization and stuff
 		if SongInfo[ModName] then
 			for Index,Value in next,SongInfo[ModName] do
@@ -576,7 +577,7 @@ function UIHandler.SelectSong(identifier:string|number,silent) -- only works for
 			if selectedSong and selectedSong:GetAttribute("Locked") == true then
 				TwS:Create(SongActions.Lock,TweenInfo.new(0.4),{ImageTransparency = 0}):Play()
 				UIHandler.SPUI_States.Locked = true
-				print(UIHandler.SPUI_States.Locked)
+				--print(UIHandler.SPUI_States.Locked)
 			else
 				TwS:Create(SongActions.Lock,TweenInfo.new(0.3),{ImageTransparency = 1}):Play()
 				UIHandler.SPUI_States.Locked = false
@@ -630,19 +631,22 @@ function UIHandler.ChangeDiff(x)-- x can be either a number or a string.
 	DiskIcon.Animations = {} -- reset the animations
 	DiskIcon.CurrAnimation = nil
 	DiskIcon.AnimData.Looped = false
-	--print(UIHandler.SPUI_States.SongName .. '-' .. name)
-	local songPlayed = UIHandler.SPUI_States.SongName .. "-" .. name
-	--print(gameSettings.settings.SongScores)
-	local scoretext = '000000000'
-	local accuracytext = '0.00%'
-	--[[for i = 1, #gameSettings.settings.SongScores do
-		if gameSettings.settings.SongScores[i][1] == songPlayed then
-			scoretext = tostring(gameSettings.settings.SongScores[i][2])
-			accuracytext = tostring(gameSettings.settings.SongScores[i][3]) .. "%"
+	
+	-- Display Song Save Data
+	--print("Update Song Score")
+	local songPlayed = UIHandler.SPUI_States.SongName
+	
+	local songSaveData,scoretext,accuracytext = gameSettings.settings.SongData,'000000000','0.00'
+	if songSaveData[songPlayed] then
+		if songSaveData[songPlayed][name] then
+			scoretext = songSaveData[songPlayed][name][1]
+			accuracytext = songSaveData[songPlayed][name][2]
 		end
-	end]]
-	Score.Points.Text = scoretext --gameSettings.settings.SongScores
-	Score.Accuracy.Text = accuracytext
+	end
+	
+	Score.Points.Text = string.rep("0", 9 - string.len(scoretext)) .. scoretext
+	Score.Accuracy.Text = accuracytext:sub(1, 5) .. "%"
+	
 	local IconInfo = (Icons[songData.song.player2] or Icons.Face)
 	if IconInfo.NormalXMLArgs then
 		DiskIcon:AddSparrowXML(IconInfo.NormalXMLArgs[1],"Display",unpack(IconInfo.NormalXMLArgs,2))
@@ -730,6 +734,23 @@ function UIHandler.ToggleUISongPickVisibility(state:bool)
 		--SongActions2.Visible = state -- this is unsused but it works
 		Score.Visible = state
 		Disk.Visible = state
+		
+		if state then
+			-- Display Song Save Data
+			--print("Update Song Score")
+			local songPlayed = UIHandler.SPUI_States.SongName
+
+			local songSaveData,scoretext,accuracytext = gameSettings.settings.SongData,'000000000','0.00%'
+			if songSaveData[songPlayed] then
+				if songSaveData[songPlayed][SongActions.DiffText.Text] then
+					scoretext = songSaveData[songPlayed][SongActions.DiffText.Text][1]
+					accuracytext = songSaveData[songPlayed][SongActions.DiffText.Text][2]
+				end
+			end
+
+			Score.Points.Text = string.rep("0", 9 - string.len(scoretext)) .. scoretext
+			Score.Accuracy.Text = accuracytext:sub(1, 5) .. "%"
+		end
 		-- Tween?
 		funnyTweens = {
 			TwS:Create(ModPick,enterTwI,{
@@ -776,19 +797,7 @@ function UIHandler.ToggleUISongPickVisibility(state:bool)
 	for i,v in next,funnyTweens do
 		v:Play()
 	end
-	--print(UIHandler.SPUI_States.SongName .. '-' .. name)
-	local songPlayed = tostring(UIHandler.SPUI_States.SongName) .. "-" .. tostring(UIHandler.SPUI_States.SelectedMod.Name)
-	--print(gameSettings.settings.SongScores)
-	local scoretext = '000000000'
-	local accuracytext = '0.00%'
-	--[[for i = 1, #gameSettings.settings.SongScores do
-		if gameSettings.settings.SongScores[i][1] == songPlayed then
-			scoretext = tostring(gameSettings.settings.SongScores[i][2])
-			accuracytext = tostring(gameSettings.settings.SongScores[i][3]) .. "%"
-		end
-	end]]
-	Score.Points.Text = scoretext --gameSettings.settings.SongScores
-	Score.Accuracy.Text = accuracytext
+	
 	UIHandler.DiskAnimSetState(state)
 	if state then
 		menuUIConnection = UIB.InputEvents.Pressed:Connect(function(Name,IO,gPU)
@@ -1226,7 +1235,6 @@ end
 
 local open = false
 settingButton.Activated:Connect(function()
-	print'boop'
 	if open then
 		open = false
 		funnySettings.Parent = nil

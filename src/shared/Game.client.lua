@@ -502,6 +502,7 @@ lastSettings = plr:GetAttribute("Settings")
 
 if lastSettings then
 	local getSettings = HS:JSONDecode(lastSettings)
+	print(lastSettings)
 	for Name,Value in next, getSettings do
 		local originalValue = GameHandler.settings[Name]
 		if originalValue ~= nil and type(originalValue) ~= "table" and type(originalValue) == type(Value) then
@@ -526,6 +527,11 @@ if lastSettings then
 							end
 						end--]=]
 					end
+				end
+			elseif Name == "SongData" then
+				for songName,Difficulty in next,Value do
+					GameHandler.settings.SongData[songName] = Difficulty
+					print("Added Song Data")
 				end
 			end
 		elseif originalValue == nil then
