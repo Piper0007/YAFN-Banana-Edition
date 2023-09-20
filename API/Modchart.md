@@ -85,6 +85,7 @@ A bool which tells if it's playing Dad side.
 ### .GUI : table/Array
 	
 ```LiveScript
+	Basically contains everything you can do with a imageLabel
     || CONTENTS ||
     Rotation : number
 		 variable that dictates the rotation of the receptor(s)
@@ -100,6 +101,7 @@ A bool which tells if it's playing Dad side.
 		This value is useless if BehaviourType is set to "Separate".
 	BehaviourType : string (All,HUD,Camera,Separate)
 		Changes how the zoom should work.
+		Behaviour type is not used with the new system :/
 	hudZoom : number
 		Sets the game UI zoom.
 		Only effective if BehaviourType is set to "Separate".
@@ -156,9 +158,6 @@ Settings where you can toggle certain behaviours.
 Game user interface.
 If you want to add sprites to the UI, its recommended to add them via gameUI.realGameUI.Notes
 ```
-### gameHandler : table/Dictionary
-	
-```The engine module.```
 	
 ### notes : table/Array
 	
@@ -200,7 +199,8 @@ I.E susNotesLanes[1][2]
 	
 ```LiveScript
 Contains all the functions that affect the game
-|| CONTENTS || 
+|| CONTENTS ||
+	-- Functions
 	changeIcon(name : string, side : boolean (false=dad, true=bf)) : function
       		Changes the icon for the selected side.
 	changeAnimation(name : , player : object, speed, looped : boolean, force : boolean) : function
@@ -211,6 +211,43 @@ Contains all the functions that affect the game
 	processEvent(event : string, value1 : float, value2 : float, ...)
 		Runs an event through a processer that goes through all the known events and sends a signal to the 
       		EventTrigger if it is not already defined.
+		For a list of all the events go to the Events API
+	setProperty(va : string, value : value to set the property to)
+		|| LIST OF CHANGEABLE PROPERTIES ||
+		'camControls' -- list
+		'defaultCamZoom' -- number (default: 1)
+		'camGame.zoom' -- number
+		'camZooming' -- boolean
+		'songLength' -- This changes the length of the TimeBar, it does not change the actual length of the song
+	getSongName(SongData : moduleScript) -- returns the name of the song from a moduleScript
+	closeScript(name : string) -- Used to prevent the modchart from being used any more in a song (the name will be something like "modchart.lua")
+	receptChangeSkin(Receptor : int, NSLabel : imageLabel, XML : moduleScript) -- changes the receptors
+	ChangeNoteSkin(noteSkinName : string, boolSide (false=dad, true=bf), force : boolean, mania : int) -- Changes the note skin
+	Kill() -- This just kills the player, nothing special really (check if the player has death enabled before using this)
+
+	-- Lists/Variables
+	settings: --Contains a list of all the player's settings
+	PlayerObjects: --Contains a list of the players' objects (dad, bf)
+	PositioningParts: --Contains a list of all the parts to the stage
+		Left = nil; -- Dad
+		Right = nil; -- Boyfriend
+		Left2 = nil; -- Second BF
+		Right2 = nil;
+		Camera = nil;
+		isPlayer = {nil,nil,nil,nil}; -- bf, dad, bf2, dad2
+		AccuracyRate = nil; -- the funny messages
+		PlayAs = nil; -- none, left or right
+		isOpponentAvailable = nil; -- fighting against a ghost?????
+		Spot = nil;
+		--BFIcon = BFIcon; -- DEPRECATED
+		--DadIcon = DadIcon; -- DEPRECATED
+		CameraPlayer = false;
+	PlayerStats: --Contains a list of all the player's stats
+		Health = 1;
+		DrainRate = 0; -- health drained in seconds.
+		MaxHealth = 2;
+		Score = 0;
+	
 ```
 	
 </details>
@@ -298,6 +335,8 @@ Runs when an event is played, even when an event is called from a modchart.
 <summary>gameHandler.processEvent()</summary>
 	
 ```LiveScript
+|| MORE IN DEPTH IN THE EVENTS API ||
+
 This function will be used whenever you want to process an event.
 Any time "processEvent()" is used the "EventTrigger()" event is played inside the modchart.
 ```
@@ -413,7 +452,7 @@ This event only plays when the setting "ForceSpeed" is false.
 ```lua
 --!nolint UnknownGlobal
 --!nolint UninitializedLocal
-local Conductor = require(game.ReplicatedStorage.Modules.Conductor)
+--local Conductor = require(game.ReplicatedStorage.Modules.Conductor) -- This doesn't need to be defined unless you need to know the stepCrochet or BPM and what not
 --local timer = 0; -- If this is unused then get rid of it.
 return {
 	-- This function is played after the countdown.
