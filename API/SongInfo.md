@@ -38,4 +38,7 @@ Another one to note is "BGImage" which stands for Background Image.
 If you want to make your custom Background Images you need to make an image that is (45, 45) pixels and should look similar to a texture image just like this:
 
 ![Circles](https://github.com/Piper0007/YAFN-Banana-Edition/assets/110263550/8f3a2c7a-2bae-4cf8-b613-ffccf9a43638)
+
+I added more functionality for the backgrounds stuff and added a customizations folder that you can find in (StarterGui -> GameUI -> SongPickUI -> ModBackgrounds)
+And you can access them in songInfo by adding something called "BGType" and set to the name of the background.
 </details>
