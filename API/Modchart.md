@@ -194,6 +194,45 @@ I.E susNotesLanes[1][2]
 ### initialSpeed : number
 	
 ``The speed of the scroll speed. This is like normal FNF but it's 0.45 times less``
+
+### plrStats : table/Array
+
+```
+A table that includes the player's stats
+|| CONTENTS ||
+	Health = 1;
+	DrainRate = 0; -- health drained in seconds.
+	MaxHealth = 2;
+	Score = 0;
+```
+
+### HideNotes : function (hide: boolean, side:string, hideReceptors:boolean, speed:number)
+
+```A function that that just makes it a bit easier to hide the notes/receptors```
+
+### MoveCamera : function (position: CFrame)
+
+```A function that simplifies the process of getting the camera from point A to point B```
+
+### addSprite : function (tag: string, image: string, parent: Instance)
+
+```
+A function that returns a new ImageLabel that acts as an overlay for your screen
+(By default, the image will be set to not visible so please remember to set it to visible)
+```
+
+### addAnimatedSprite : function (image: ImageLabel, visible: boolean, parent: Instance)
+
+```
+A function that returns a Sprite that autocalibrates it's size based on 2 given inputs.
+To explain, the ImageLabel you provide must have 2 attributes.
+(SpriteSize) must be a Vector2 value and set the two values to the width and height of the frame (or the frameSize)
+(SpriteSheetSize) must be a Vector 2 value that is set to the size of the entire speet sheet's image
+
+With that, the function is able to produce the accurate size needed for the sprite to fit in it's frame.
+(When scaling your image label, make sure the size is changed before turning it into a animated sprite)
+(Also when changing the scale only use the Scale and not the offset)
+```
 	
 ### gameHandler : table/Directory
 	
