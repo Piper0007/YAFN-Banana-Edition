@@ -4,9 +4,6 @@ local module = {}
 local repS = game:GetService("ReplicatedStorage")
 local mods = repS.Modules
 local songs = mods:WaitForChild'Songs'
-local songCache = {}
-local startingSong=false;
-local songEnded=false
 local TS = game:GetService("TweenService")
 local UIS = game:service'UserInputService'
 local KSP = game:GetService("KeyframeSequenceProvider")
@@ -77,7 +74,6 @@ local playerStrums = {}
 local leftStrums = {}
 local rightStrums  = {};
 local dadStrums={}
-local camFollow = nil
 local boomSpeed = 4
 local camSpeed = 1
 local currentSection={}
@@ -88,6 +84,7 @@ local opponentCombo = 0;
 local speedModifier = 1;
 local flipMode=false;
 local validScore = true;
+local Botplay = false;
 local attributeFunctions = {}
 local camZooming = false
 local defaultCamZoom = .05
@@ -95,7 +92,7 @@ local songLength = 0
 local falseSongLength = -1
 local defaultClockTime = 6.5 -- Change this to change the time of day!!!
 local modcharts = {}
-local eventNotes = {}
+local targetCam = cam.CFrame
 function numLerp(a,b,c)
 	return a+(b-a)*c
 end
@@ -142,6 +139,28 @@ end
 
 -- Tweens
 local CameraTween
+local StoredTweens = {};
+
+local function addTween(tween:Tween, name:string) -- name is optional
+	if tween then
+		if name then
+			StoredTweens[name] = tween
+		else
+			table.insert(StoredTweens, tween)
+		end
+		
+		tween.Completed:Connect(function()
+			if not name then
+				local targetSighted = table.find(StoredTweens, tween)
+				if targetSighted then
+					table.remove(StoredTweens, targetSighted)
+				end
+			end
+			
+			tween = nil
+		end)
+	end
+end
 
 -- (ratioDiff * (internalSettings.autoSize * module.settings.customSize))
 
@@ -168,6 +187,7 @@ local songData;
 local lastBPMChange
 
 -- Controllable Stuff
+camFollow = nil
 
 local camControls = {
 	zoom=0;
@@ -233,10 +253,9 @@ module.PlayerObjects = PlayerObjects
 
 -- shared stuff
 
-shared.internalSettings = internalSettings
-shared.noteScaleRatio=noteScaleRatio;
-shared.DirAmmo = DirAmmo
-shared.camFollow = camFollow
+shared.internalSettings = internalSettings -- Important
+shared.noteScaleRatio=noteScaleRatio; -- Important
+shared.DirAmmo = DirAmmo -- Important
 shared.sections = true
 shared.cancelAnim = false
 
@@ -244,8 +263,6 @@ shared.cancelAnim = false
 
 local BFIcon, DadIcon = Sprite.new(HPBarBG.Parent.BF,true,1,true,defaultScreenSize),Sprite.new(HPBarBG.Parent.Dad,true,1,true,defaultScreenSize)
 local plrIcon,oppIcon
-local bpmChangePoints = {}
-local events = {}
 module.PositioningParts = {
 	Left = nil; -- Dad
 	Right = nil; -- Boyfriend
@@ -260,10 +277,6 @@ module.PositioningParts = {
 	BFIcon = BFIcon;
 	DadIcon = DadIcon;
 	CameraPlayer = false;
-	e = nil;
-	w = nil;
-	t = nil;
-	f = nil;
 }
 module.PlayerStats = {
 	Health = 1;
@@ -273,18 +286,22 @@ module.PlayerStats = {
 }
 
 -- Might be used in the future
-module.OpponentSettings = {}
+--module.OpponentSettings = {}
 
 PlayerObjects.BF,PlayerObjects.Dad=nil,nil;
 PlayerObjects.BF2,PlayerObjects.Dad2=nil,nil;
 
 type Note = NoteClass.Note
 
-local generatedSong = false;
+local generatedSong=false;
 local startedCountdown=false;
-local opponentNotes= {};
+local startingSong=false;
+local songEnded=false;
+local opponentNotes = {};
 local notes = {};
-local localAnimTest
+local bpmChangePoints = {}
+local events = {}
+local eventNotes = {}
 
 --[[ DEPRECATED
 local playerNotesList = {
@@ -400,6 +417,7 @@ local curSong=""
 local lastStep,lastBeat,curStep,totalSteps,totalBeats,curBeat=0,0,0,0,0,0;
 
 local loadedModchartData = {};
+local loadedCutscene = nil;
 
 local unspawnedNotes = {}
 local NoteObject
@@ -409,8 +427,9 @@ Conductor.screenSize = defaultScreenSize
 local GameplayEvent = Instance.new("BindableEvent")
 GameplayEvent.Name = "GameplayEvent"
 module.GameplayEvent = GameplayEvent.Event
+
 --	-	-	-	-	-	-	-	-	-	-	-	-	-	-
--- What
+-- Functions
 --	-	-	-	-	-	-	-	-	-	-	-	-	-	-
 
 function module.getSongName(Module)
@@ -439,7 +458,7 @@ end
 
 function shakeUI(intensity, duration)
 	local elapsed = 0
-	while elapsed < duration or songEnded do
+	while elapsed < duration and generatedSong do
 		if elapsed < duration then
 			gameUI.realGameUI.Position = UDim2.new(0.5,(math.random(-intensity,intensity)),0.5,(math.random(-intensity,intensity)))
 		end
@@ -451,11 +470,9 @@ end
 
 function shakeScreen(intensity, duration)
 	local elapsed = 0
-	while elapsed < duration or songEnded do
+	while elapsed < duration and generatedSong do
 		if elapsed < duration then
-			-- Screen shake was too intense so I am adjusting values
-
-			snapCamera(offsetUI(intensity/0.9))
+			snapCamera(offsetUI(intensity))
 		end
 		elapsed += HB:Wait()
 	end
@@ -486,13 +503,10 @@ function playSound(snd,vol)
 		sound.Parent = SS
 	end
 	SS:PlayLocalSound(sound)
-	--[[
-	newSound=snd:Clone()
-	newSound.Parent=script.Parent
-	newSound:Play()
-	game:service'Debris':AddItem(newSound,newSound.TimeLength+2)--]]
 end
 
+-- Old function, removed cause too complicated to use
+--[[
 function addSprite(tag:Name, imageId:ImageId, pos:Position, size:Size)
 	local image = gameUI.realGameUI.Overlay:Clone()
 	local x = pos.X.Offset / ratioDiffX
@@ -504,10 +518,17 @@ function addSprite(tag:Name, imageId:ImageId, pos:Position, size:Size)
 	image.Visible = true
 	return image
 end
+--]]
 
 function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	generatedSong=false
 	startedCountdown=false
+	PlayerObjects = { -- Redefine
+		BF = nil;
+		Dad = nil;
+		BF2 = nil;
+		Dad2 = nil;
+	}
 	if not module.PositioningParts.isPlayer[1] and PlayerObjects.BF then PlayerObjects.BF:Destroy() end
 	if not module.PositioningParts.isPlayer[2] and PlayerObjects.Dad then PlayerObjects.Dad:Destroy() end
 	if not module.PositioningParts.isPlayer[3] and PlayerObjects.BF2 then PlayerObjects.BF2:Destroy() end
@@ -523,6 +544,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	accuracy=0
 	camZooming = false
 	defaultCamZoom = 0.05
+	falseSongLength = -1
 	camControls.zoom = 0
 	camControls.BehaviourType = "Separate"
 	camControls.StayOnCenter = false
@@ -593,14 +615,6 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	instrSound.PlaybackSpeed=speedModifier
 	voiceSound.PlaybackSpeed=speedModifier
 
-	-- Check player settings so that the player can "Advantages" to get a better score
-	validScore = true
-	if module.settings.PlaybackSpeed ~= 1 then
-		validScore = false
-	elseif module.settings.ChillMode then
-		validScore = false
-	end
-
 	local camSizeX = cam.ViewportSize.X 
 	local data = require(songName)--songCache[songName] or require(songs:FindFirstChild(songName) or songs.Philly)
 	if(typeof(data)=='string')then
@@ -623,6 +637,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	songData.mania = songName:GetAttribute("maniaForce") or songData.mania
 	local NSFolder =  repS.Modules.Assets["noteSkins" .. DirAmmo[songData.mania] .. "K"]
 	SongIdInfo = ids[songData.song]
+	if not SongIdInfo then error('This Chart References A Undefined Song (Please Change Or Add It In SongIds)'); return end
 
 	curSong=songName
 	shared.song=curSong
@@ -709,6 +724,7 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	end
 
 	local modchart = nil
+	local cutscene = nil
 	if module.settings.Modcharts then
 		local childs = songName.Parent:GetChildren()
 		for i = 1, #childs do 
@@ -718,6 +734,9 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 				local thing = require(childs[i])
 				table.insert(events, HS:JSONDecode(thing))
 			end
+			if childs[i].Name == "Cutscene" then
+				cutscene = childs[i]
+			end
 		end
 		local childs = songName.Parent.Parent:GetChildren()
 		for i = 1, #childs do 
@@ -725,7 +744,6 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 				table.insert(modcharts, childs[i])
 			end
 		end
-
 		modchart = SongIdInfo.Script and mods.Modcharts:FindFirstChild(SongIdInfo.Script) or mods.Modcharts:FindFirstChild(songData.song)
 		table.insert(modcharts, modchart)
 	end
@@ -848,33 +866,21 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 		local BFChar = songData.player1
 		local DadChar = songData.player2
 		-- icons
-
-		local BFAssetInfo = Icons[BFChar] or Icons.bf
-		local DadAssetInfo = Icons[DadChar] or Icons.Face
-		--BFAssetInfo,DadAssetInfo = BFAssetInfo,DadAssetInfo
+		
+		-- Trust me this needed
+		local BFsIcon = songData.player1
+		local DadsIcon = songData.player2
+		
 		plrIcon = flipMode and DadIcon or BFIcon
 		oppIcon = flipMode and BFIcon or DadIcon
 		if module.settings.CustomIcon and module.settings.CustomIcon ~= "Default" then
 			if flipMode then
-				BFChar = module.settings.CustomIcon
-				DadAssetInfo = Icons[module.settings.CustomIcon] or Icons.Face
+				DadsIcon = module.settings.CustomIcon
 			else
-				DadChar = module.settings.CustomIcon
-				BFAssetInfo = Icons[module.settings.CustomIcon] or Icons.bf
+				BFsIcon = module.settings.CustomIcon
 			end
 		end
-
-		--[[if (module.PositioningParts.isOpponentAvailable~=nil) then
-			if not flipMode then
-				--module.OpponentSettings.OppIcon = DadAssetInfo
-				--GameplayEvent:Fire("OppIcon",DadAssetInfo)
-				--DadAssetInfo = module.OpponentSettings.OppIcon or Icons.Face
-			else
-				--module.OpponentSettings.OppIcon = BFAssetInfo
-				--GameplayEvent:Fire("OppIcon",BFAssetInfo)
-				--BFAssetInfo = module.OpponentSettings.OppIcon or Icons.bf
-			end
-		end]]
+		
 		-- Try to reset the animations
 		BFIcon.Animations = {}
 		DadIcon.Animations = {}
@@ -883,74 +889,58 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 		BFIcon.AnimData.Looped = false
 		DadIcon.AnimData.Looped = false
 
-		module.changeIcon(BFChar, true)
-		module.changeIcon(DadChar, false)
+		module.changeIcon(BFsIcon, true) -- true is right side
+		module.changeIcon(DadsIcon, false) -- false is left side
 		-- models
-		local BFAnimations = {
-			Offset = CFrame.new();
-			MicPositioning = {}; -- Can be an object as well.
-			Microphone = "Default";
-		}
-		local DadAnimations = {
-			Offset = CFrame.new();
-			MicPositioning = {};
-			Microphone = "Default";
-		}
+		local CharacterAnimations = {};
 		local plrChar = flipMode and DadChar or BFChar
+		local Animations = {};
 		local BFAnim,DadAnim
 		local selectedPlayerAnims = module.settings.ForcePlayerAnim ~= "Default" and 
 			repS.Animations.CharacterAnims:FindFirstChild(module.settings.ForcePlayerAnim) or repS.Animations.CharacterAnims:FindFirstChild(plrChar)
-		--local BFAnim = (flipMode == false and selectedPlayerAnims or (repS.Animations.CharacterAnims:FindFirstChild(SongIdInfo.BFAnimations or BFChar) or repS.Animations.CharacterAnims.BF)) 
-		--local DadAnim = (flipMode == true and selectedPlayerAnims or (repS.Animations.CharacterAnims:FindFirstChild(SongIdInfo.DadAnimations or DadChar) or repS.Animations.CharacterAnims.Dad))
 		if flipMode then
-			BFAnim = (repS.Animations.CharacterAnims:FindFirstChild(SongIdInfo.BFAnimations or BFChar) or repS.Animations.CharacterAnims.BF)
-			DadAnim =  selectedPlayerAnims or (repS.Animations.CharacterAnims:FindFirstChild(SongIdInfo.DadAnimations or DadChar) or repS.Animations.CharacterAnims.Dad)
+			Animations["BF"] = (repS.Animations.CharacterAnims:FindFirstChild(SongIdInfo.BFAnimations or BFChar) or repS.Animations.CharacterAnims.BF)
+			Animations["Dad"] = selectedPlayerAnims or (repS.Animations.CharacterAnims:FindFirstChild(SongIdInfo.DadAnimations or DadChar) or repS.Animations.CharacterAnims.Dad)
 		else
-			BFAnim = selectedPlayerAnims or (repS.Animations.CharacterAnims:FindFirstChild(SongIdInfo.BFAnimations or BFChar) or repS.Animations.CharacterAnims.BF)
-			DadAnim = (repS.Animations.CharacterAnims:FindFirstChild(SongIdInfo.DadAnimations or DadChar) or repS.Animations.CharacterAnims.Dad)
+			Animations["BF"] = selectedPlayerAnims or (repS.Animations.CharacterAnims:FindFirstChild(SongIdInfo.BFAnimations or BFChar) or repS.Animations.CharacterAnims.BF)
+			Animations["Dad"] = (repS.Animations.CharacterAnims:FindFirstChild(SongIdInfo.DadAnimations or DadChar) or repS.Animations.CharacterAnims.Dad)
 		end
-		local needsProps = (flipMode and DadAnim or BFAnim):GetAttribute("CharacterName")
-		if needsProps and repS.Characters[needsProps] then
-			local bf = BFAnim:GetAttribute('CharacterName') or 'BF'
-			local dad = DadAnim:GetAttribute('CharacterName') or 'opponent'
-			if flipMode then DadChar = needsProps; BFChar = bf else BFChar = needsProps; DadChar = dad end
-			if repS.Characters[flipMode and bf or dad] then
-				if flipMode then BFChar = bf else DadChar = dad end
+		
+		local function makeAnimTable(name, anim) -- Make the animation table for character's name
+			Animations[name] = anim
+			if not CharacterAnimations[name] then
+				CharacterAnimations[name] = {};
+				CharacterAnimations[name].MicPositioning = nil
+				CharacterAnimations[name].Offset = CFrame.new()
+				CharacterAnimations[name].Name = anim.Name
 			end
-		end
-		for _,AnimObj in next,BFAnim:GetChildren() do
-			if AnimObj:IsA("CFrameValue") and AnimObj.Name == "BFOffset" then
-				BFAnimations.Offset = AnimObj.Value
-			end
-			if AnimObj:IsA("Folder") and AnimObj.Name == "MicPositioning" then
-				for _,Obj in next,AnimObj:GetChildren() do
-					BFAnimations.MicPositioning[Obj.Name] = Obj.Value
+			for _,AnimObj in next,anim:GetChildren() do
+				if AnimObj:IsA("CFrameValue") and AnimObj.Name == "BFOffset" then
+					CharacterAnimations[name].Offset = AnimObj.Value
 				end
-			elseif AnimObj:IsA("ObjectValue") or AnimObj:IsA("BoolValue") and AnimObj.Name == "MicPositioning" then
-				--table.insert(BFAnimations.MicPositioning,AnimObj.Value)
-				BFAnimations.MicPositioning = AnimObj.Value
-			elseif AnimObj:IsA('StringValue') and AnimObj.Name == "Microphone" then
-				BFAnimations.Microphone = AnimObj.Value
-			elseif AnimObj:IsA("Animation") then
-				BFAnimations[AnimObj.Name] = string.sub(AnimObj.AnimationId,14)
-			end
-		end
-		for _,AnimObj in next,DadAnim:GetChildren() do
-			if AnimObj:IsA("CFrameValue") and AnimObj.Name == "DadOffset" then
-				DadAnimations.Offset = AnimObj.Value
-			end
-			if AnimObj:IsA("Folder") and AnimObj.Name == "MicPositioning" then
-				for _,Obj in next,AnimObj:GetChildren() do
-					DadAnimations.MicPositioning[Obj.Name] = Obj.Value
+				if AnimObj:IsA("Folder") and AnimObj.Name == "MicPositioning" then
+					for _,Obj in next,AnimObj:GetChildren() do
+						CharacterAnimations[name].MicPositioning[Obj.Name] = Obj.Value
+					end
+				elseif AnimObj:IsA("ObjectValue") or AnimObj:IsA("BoolValue") and AnimObj.Name == "MicPositioning" then
+					CharacterAnimations[name].MicPositioning = AnimObj.Value
+				elseif AnimObj:IsA('StringValue') and AnimObj.Name == "Microphone" then
+					CharacterAnimations[name].Microphone = AnimObj.Value
+				elseif AnimObj:IsA("Animation") then
+					--CharacterAnimations[name][AnimObj.Name] = string.sub(AnimObj.AnimationId,14)
 				end
-			elseif AnimObj:IsA("ObjectValue") or AnimObj:IsA("BoolValue") and AnimObj.Name == "MicPositioning" then
-				DadAnimations.MicPositioning = AnimObj.Value
-			elseif AnimObj:IsA('StringValue') and AnimObj.Name == "Microphone" then
-				DadAnimations.Microphone = AnimObj.Value
-			elseif AnimObj:IsA("Animation") then
-				DadAnimations[AnimObj.Name] = string.sub(AnimObj.AnimationId,14)
 			end
 		end
+		
+		makeAnimTable("BF", Animations["BF"])
+		makeAnimTable("Dad", Animations["Dad"])
+		if SongIdInfo.BF2Animations then
+			makeAnimTable("BF2", repS.Animations.CharacterAnims:FindFirstChild(SongIdInfo.BF2Animations and SongIdInfo.BF2Animations or repS.Animations.CharacterAnims.BF) or repS.Animations.CharacterAnims.BF)
+		end
+		if SongIdInfo.Dad2Animations then
+			makeAnimTable("Dad2", repS.Animations.CharacterAnims:FindFirstChild(SongIdInfo.Dad2Animations and SongIdInfo.Dad2Animations or repS.Animations.CharacterAnims.Dad) or repS.Animations.CharacterAnims.Dad)
+		end
+		
 		local opponent = module.PositioningParts.isOpponentAvailable -- this is the player on the other side of the stage
 		local char = plr.Character
 
@@ -962,103 +952,101 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			end
 		end
 
+		local offsets = {CFrame.new(), CFrame.new(), CFrame.new(), CFrame.new()}
+		
+		-- Order of the characters that will be spawned
+		local objectOrder = {"BF", "Dad", SongIdInfo.BF2Animations and "BF2" or nil, SongIdInfo.Dad2Animations and "Dad2" or nil};
+		local charOrder = {BFChar, DadChar, SongIdInfo.BF2Animations, SongIdInfo.Dad2Animations};
+		local sides = {"Left", "Right", "Left2", "Right2"};
+		
+		if SongIdInfo.ExtraAnimations then
+			local i = 2
+			for name,animation in pairs(SongIdInfo.ExtraAnimations) do
+				table.insert(objectOrder, name)
+				table.insert(charOrder, animation)
+				local newSide = ((i % 2 == 0) and "Right" or "Left") .. math.ceil(i/2)
+				table.insert(sides, newSide)
+				
+				if not module.PositioningParts[newSide] then
+					module.PositioningParts[newSide] = Instance.new("Part")
+				end
+				local newCFrame = (i % 2 == 0) and module.PositioningParts.Left.CFrame or  module.PositioningParts.Right.CFrame
+				module.PositioningParts[newSide].CFrame = newCFrame
+				makeAnimTable(name, repS.Animations.CharacterAnims:FindFirstChild(animation) or repS.Animations.CharacterAnims.Dad)
+				i+=1;
+			end
+		end
+		
 		module.PositioningParts.Left2.CFrame = module.PositioningParts.Left.CFrame * CFrame.new(1.75,0,-2)
 		module.PositioningParts.Right2.CFrame = module.PositioningParts.Right.CFrame * CFrame.new(3,0,3)
 
-		local offsets = {CFrame.new(), CFrame.new(), CFrame.new(), CFrame.new()}
-
 		if SongIdInfo.AnimOffsets then
 			offsets = SongIdInfo.AnimOffsets
-			local sides = {"Left", "Right", "Left2", "Right2"}
 
 			for i = 1, #offsets do
 				module.PositioningParts[sides[i]].CFrame *= offsets[i]
 			end
 		end
-		if SongIdInfo.BF2Animations then
+		
+		
+		if SongIdInfo.BF2Animations then -- Moves the position a bit because the characters overlap a bit
 			module.PositioningParts.Left.CFrame *= CFrame.new(-1.75, 0, 0.25)
 		end
-
-		-- module.PositioningParts.isPlayer:list this lists players in spot 1, 2, 3, and 4
-		if flipMode then -- Character.new(char:string,CFrame: a, isPlayer:bool, Animations, AnimationName: g, Microphone: string)
-			PlayerObjects.BF = Character.new(BFChar,module.PositioningParts.Left.CFrame,module.PositioningParts.isPlayer[1],BFAnimations,BFAnim.Name,BFAnimations.Microphone, speedModifier) -- Opponent character as BF
-
-			if not module.PositioningParts.isPlayer[1] then PlayerObjects.BF.Obj.Parent=workspace end -- checks if there is a player in spot 1 and if not place a placeholder character in the game
-			PlayerObjects.Dad = Character.new(DadChar,module.PositioningParts.Right.CFrame,module.PositioningParts.isPlayer[2],DadAnimations,DadAnim.Name,DadAnimations.Microphone, speedModifier) -- Player character as Dad
-			if not module.PositioningParts.isPlayer[2] then PlayerObjects.Dad.Obj.Parent=workspace end
-		else--if not flipMode then
-			PlayerObjects.Dad = Character.new(DadChar,module.PositioningParts.Right.CFrame,module.PositioningParts.isPlayer[2],DadAnimations,DadAnim.Name,DadAnimations.Microphone, speedModifier) -- Opponent character as Dad
-			if not module.PositioningParts.isPlayer[2] then PlayerObjects.Dad.Obj.Parent=workspace end -- checks if there is a player in spot 2
-			PlayerObjects.BF = Character.new(BFChar,module.PositioningParts.Left.CFrame,module.PositioningParts.isPlayer[1],BFAnimations,BFAnim.Name,BFAnimations.Microphone, speedModifier) -- Player character as BF
-			if not module.PositioningParts.isPlayer[1] then PlayerObjects.BF.Obj.Parent=workspace end 
-		end	
-
-		PlayerObjects.Dad:flipDir() -- flips direction on player2 / dad character
-		PlayerObjects.Dad:ToggleAnimatorScript(false)
-		PlayerObjects.BF:ToggleAnimatorScript(false)
-		-- alt stuff
-		local Dad2Char = SongIdInfo.Dad2Animations
-		local Dad2Animations
-		if Dad2Char then
-			Dad2Animations = {
-				Offset = CFrame.new();
-				MicPositioning = {};
-				Microphone = "Default";
-			}
-			for _,AnimObj in next,(repS.Animations.CharacterAnims:FindFirstChild(SongIdInfo.Dad2Animations or Dad2Char) or repS.Animations.CharacterAnims.Dad):GetChildren() do
-				if AnimObj:IsA("CFrameValue") and AnimObj.Name == "DadOffset" then
-					Dad2Animations.Offset = AnimObj.Value
-				elseif AnimObj:IsA("Folder") and AnimObj.Name == "MicPositioning" then
-					for _,Obj in next,AnimObj:GetChildren() do
-						Dad2Animations.MicPositioning[Obj.Name] = Obj.Value
-					end
-				elseif AnimObj:IsA("ObjectValue") or AnimObj:IsA("BoolValue") and AnimObj.Name == "MicPositioning" then
-					Dad2Animations.MicPositioning = AnimObj.Value
-				elseif AnimObj:IsA('StringValue') and AnimObj.Name == "Microphone" then
-					Dad2Animations.Microphone = AnimObj.Value
-				elseif AnimObj:IsA("Animation") then
-					Dad2Animations[AnimObj.Name] = string.sub(AnimObj.AnimationId,14)
+		
+		-- What this does is make the characters for "BF" and "Dad", it's is designed to be scaleable so like if you had "Dad2" and "BF2" then it could work easier to add more than just 4
+		for index,obj in pairs(objectOrder) do
+			--print(obj, index)
+			local player = module.PositioningParts.isPlayer[index]
+			if (not charOrder[index]) then continue end
+			--if (not Animations[obj]) then continue end
+			
+			local description = nil
+			local opponent = nil
+			if player then
+				description = player.Character.Humanoid:GetAppliedDescription() -- Retrieves the accessories of a character
+				
+				if not description then
+					task.wait() -- Make it yield in case the description didn't load
+				end
+				
+				if player == game.Players.LocalPlayer and module.PositioningParts.isOpponentAvailable then
+					opponent = module.PositioningParts.isOpponentAvailable
 				end
 			end
-			PlayerObjects.Dad2 = Character.new(Dad2Char,module.PositioningParts.Right2.CFrame,module.PositioningParts.isPlayer[4],Dad2Animations,SongIdInfo.Dad2Animations,Dad2Animations.Microphone, speedModifier)
-			PlayerObjects.Dad2:flipDir()
-			if not module.PositioningParts.isPlayer[4] then PlayerObjects.Dad2.Obj.Parent = workspace end
-		end
-		local BF2Char = SongIdInfo.BF2Animations
-		local BF2Animations
-		if BF2Char then
-			BF2Animations = {
-				Offset = CFrame.new();
-				MicPositioning = {};
-				Microphone = "Default";
-			}
-		end
-		if SongIdInfo.BF2Animations then
-			for _,AnimObj in next,(repS.Animations.CharacterAnims:FindFirstChild(SongIdInfo.BF2Animations or BF2Char or repS.Animations.CharacterAnims.BF)):GetChildren() do
-				if AnimObj:IsA("CFrameValue") and AnimObj.Name == "BFOffset" then
-					BF2Animations.Offset = AnimObj.Value
-				end
-				if AnimObj:IsA("Folder") and AnimObj.Name == "MicPositioning" then
-					for _,Obj in next,AnimObj:GetChildren() do
-						BF2Animations.MicPositioning[Obj.Name] = Obj.Value
-					end
-				elseif AnimObj:IsA("ObjectValue") or AnimObj:IsA("BoolValue") and AnimObj.Name == "MicPositioning" then
-					BF2Animations.MicPositioning = AnimObj.Value
-				elseif AnimObj:IsA('StringValue') and AnimObj.Name == "Microphone" then
-					BF2Animations.Microphone = AnimObj.Value
-				elseif AnimObj:IsA("Animation") then
-					BF2Animations[AnimObj.Name] = string.sub(AnimObj.AnimationId,14)
-				end
+			
+			local Char = Character.new(charOrder[index], module.PositioningParts[sides[index]].CFrame, player == game.Players.LocalPlayer and player or nil, CharacterAnimations[obj], Animations[obj].Name, speedModifier, description, opponent)
+			
+			if not Char then
+				warn("Character failed to spawn")
+				break;
 			end
-			PlayerObjects.BF2 = Character.new(BF2Char,module.PositioningParts.Left2.CFrame,module.PositioningParts.isPlayer[3],BF2Animations,SongIdInfo.BF2Animations,BF2Animations.Microphone, speedModifier)
-			if not module.PositioningParts.isPlayer[3] then PlayerObjects.BF2.Obj.Parent = workspace end
-		end	
-	end
-	if PlayerObjects.BF2 then
-		PlayerObjects.BF2:ToggleAnimatorScript(false)
-	end
-	if PlayerObjects.Dad2 then
-		PlayerObjects.Dad2:ToggleAnimatorScript(false)
+			
+			PlayerObjects[obj] = Char
+			
+			if not player then
+				PlayerObjects[obj].Obj.Parent = workspace
+			else
+				--[[
+				task.spawn(function()
+					--print(string.format('%s is here', tostring(player.Name)))
+					local serverRig = workspace:WaitForChild("ServerRig-" .. player.Name, 5)
+					if serverRig then
+						serverRig:Destroy()
+					else
+						warn(string.format('%s Server Rig not removed', tostring(player.Name)))
+					end
+				end)
+				--]]
+			end
+			
+			if index%2 == 0 then -- for every characters flip the direction, (so it would go like BF, Dad, BF, Dad, BF, Dad)
+				Char:flipDir() -- this function swaps the left and right animations (used for characters on the left side)
+			end
+			
+			if char then
+				Char:ToggleAnimatorScript(false) -- Disables a roblox default script that handles animating player movement
+			end
+		end
 	end
 
 	-- set the UI up
@@ -1107,28 +1095,19 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 		DadBG.Size = UDim2.fromScale((0.35 * ((shared.autoSize * shared.handler.settings.customSize)))*(DirAmmo[songData.mania]/4),0.95)
 		DadBG.BackgroundTransparency = module.settings.BackgroundTrans/100
 	end
-	-- end
 
 	DadNotesUI:ClearAllChildren()
 	BFNotesUI:ClearAllChildren()
-	--print("Flipmode: "..tostring(flipMode)..", Opponent: "..tostring(module.PositioningParts.isOpponentAvailable)..", Player: "..tostring(plr)..", plr2: "..tostring(plr2))
-	--print(module.PositioningParts.isPlayer[4] ~= nil)
-	--[[if module.PositioningParts.isPlayer[3] == plr or module.PositioningParts.isPlayer[4] == plr then
-		flipMode = not flipMode
-	end]]
+	
 	-- Attributes stuff
-
 	for Name,Value in next,songName:GetAttributes() do
 		if attributeFunctions[Name] then
 			attributeFunctions[Name](Value)
 		end
 	end
 
-	-- preload the notes
-	local maniac = keyAmmo[songData.mania+1]
-
 	local noteGroup = SongIdInfo.NoteGroup or songName:GetAttribute('noteGroup') or 'Default'
-	if(#modcharts > 0)then  -- Modchart Variables
+	if(#modcharts > 0 or cutscene)then  -- Modchart Variables
 		local vars = {
 			flipMode=flipMode;
 			defaultcamzoom=1 + defaultCamZoom;
@@ -1159,7 +1138,115 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			initialSpeed=initialSpeed;
 			mapProps=mapProps;
 			playbackRate=speedModifier;
-			addSprite=addSprite;
+			plrStats = module.PlayerStats,
+			HideNotes = function(hide:boolean, side:string, hideReceptors:boolean, speed)
+				local oldThing = internalSettings.notesShareTransparencyWithReceptors
+				local noteStuff
+				local receps
+				if side == "left" then
+					noteStuff = flipMode
+					receps = leftStrums
+				elseif side == "right" then
+					noteStuff = not flipMode
+					receps = rightStrums
+				elseif side == "both" then
+					noteStuff = nil
+					receps = allReceptors
+				end
+
+				speed = speed or 1
+
+				task.spawn(function()
+					local trans = 0
+					local elapsed = 0
+					local To = hide and 1 or 0
+					local From = hide and 0 or 1
+					if hideReceptors then
+						internalSettings.notesShareTransparencyWithReceptors = true
+					end
+					--if side == "both" then
+					--	internalSettings.NoteSpawnTransparency = trans -- This makes any spawning notes transparency
+					--end
+					repeat
+						elapsed += HB:Wait()
+						trans = numLerp(From, To, elapsed/speed) -- Lerp I guess
+						if elapsed > speed then
+							trans = To
+						end
+						if hideReceptors == true then -- Having it hide the receptors make everything so much easier
+							for _,receptor in pairs(receps) do
+								receptor.Alpha = math.abs(1-trans)
+							end
+						end
+						for _,note in pairs(notes) do
+							if not noteStuff or (note.MustPress == noteStuff) then
+								note.Transparency = trans
+							end
+						end
+						for _,note in pairs(unspawnedNotes) do
+							if not noteStuff or (note.MustPress == noteStuff) then
+								note.Transparency = trans
+							end
+						end
+					until elapsed>speed or songEnded
+					--internalSettings.notesShareTransparencyWithReceptors = oldThing or false
+				end)
+			end,
+			MoveCamera = function(position:CFrame) -- Moves the camera to the desired position (CFrame value)
+				-- Define The Previous Values
+				local stayedOnCenter = camControls.StayOnCenter
+				local disabledLerp = camControls.DisableLerp
+				-- Set this stuff to this so that the camera moves instantly
+				camControls.DisableLerp = true
+				camControls.StayOnCenter = true
+				module.PositioningParts.Camera.CFrame = position
+				targetCam = position
+				delay(0.2, function()
+					-- Return stuff to the previous value
+					camControls.DisableLerp = disabledLerp
+					camControls.StayOnCenter = stayedOnCenter
+				end)
+			end,
+			addSprite = function(tag:string, image:string, parent) -- Makes a sprite that will cover the screen with defined image
+				local newSprite = repS.Assets.Images.Overlay:Clone()
+				if typeof(image) ~= "Color3" then -- if it is a Color3 value then make change the background color
+					newSprite.Image = image
+				else
+					newSprite.BackgroundColor3 = image
+				end
+
+				newSprite.Name = tag
+				newSprite.Parent = parent or gameUI.realGameUI.waste
+
+				return newSprite
+			end;
+			-- This is helpful for people who don't want to be calculating everything
+			addAnimatedSprite = function(image:ImageLabel, visible:boolean, parent:Instance)
+				-- Adding animated sprites is no simple matter so I am making all these checks to ensure people are following the right steps to make it work
+				if not image or not image:IsA("ImageLabel") then warn('Where the Image Label at?') return end
+				local img = image:Clone()
+				local sizeData = img:GetAttribute("SpriteSize") -- This is required
+				if not sizeData then
+					warn('ImageLabel Lacks The "SpriteSize" Vector2 Attribute') -- Adding this for people who don't read documentation
+					return
+				end
+				local bigSizeData = img:GetAttribute("SpriteSheetSize") -- This is also required
+				if not bigSizeData then
+					warn('ImageLabel Lacks The "SpriteSheetSize" Vector2 Attribute')
+					return
+				end
+				-- The factor is equal to roblox's image size limit which is 1024x1024
+				local largerSize = bigSizeData.X >= bigSizeData.Y and bigSizeData.X or bigSizeData.Y
+				-- The Vector2 is equal to the size of the frame multiplied by the size of the ImageLabel
+				local factor = largerSize/1024
+				if factor < 1 then
+					factor = 1
+				end
+				local animSprite = Sprite.new(img, true, factor, true, {X=sizeData.X/img.Size.X.Scale, Y=sizeData.Y/img.Size.Y.Scale})
+				animSprite.GUI.Visible = visible or true
+				img.Parent = parent or gameUI.realGameUI
+				return animSprite
+			end,
 		}
 		for i = 1, #modcharts do
 			table.insert(loadedModchartData, require(modcharts[i]));
@@ -1177,6 +1264,23 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			end
 			if(loadedModchartData[i]) and loadedModchartData[i].preInit then
 				loadedModchartData[i].preInit(gameUI,module)
+			end
+		end
+		if cutscene then
+			loadedCutscene = require(cutscene)
+			for _,v in next, loadedCutscene do
+				if(typeof(v)=='function')then
+					local orig = getfenv(v);
+					local env = setmetatable({},{
+						__index=function(s,i)
+							return vars[i] or orig[i];
+						end,
+					})
+					setfenv(v,env)
+				end
+			end
+			if loadedCutscene and loadedCutscene.Preload then
+				loadedCutscene.Preload();
 			end
 		end
 	else
@@ -1207,7 +1311,10 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			pos+= ((60/curBPM)*1000/4)*deltaSteps;
 		end
 	end
-
+	
+	local maniac = keyAmmo[songData.mania+1]
+	
+	-- preload the notes
 	local ScriptProcessor = repS.Modules.ChartProcessors:FindFirstChild(SongIdInfo.ChartProcessorName or "")
 	if ScriptProcessor and ScriptProcessor:IsA("ModuleScript") then
 		require(ScriptProcessor)(unspawnedNotes,notesData,songData,internalSettings,flipMode,{
@@ -1391,13 +1498,55 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 				CameraTween = nil
 			end)
 			return CameraTween
+		elseif curEvent == "hey!" then
+			local value = 2
+			Switch()
+				:case('bf' or 'boyfriend' or '0', function()
+					value = 0
+				end)
+				:case('gf' or 'girlfriend' or '1', function()
+					value = 1
+				end)(string.lower(value1))
+			if value == 0 then
+				local char = PlayerObjects.BF
+				char:PlayAnimation("hey", true)
+			else
+				-- do somethin 
+			end
 		elseif curEvent == "add camera zoom" then
 			if module.settings.CameraZooms and camControls.hudZoom < 1.4 then
 				camControls.hudZoom += tonumber(value1) or 0.03
 				camControls.camZoom += tonumber(value2) or 0.015
 			end
+		elseif curEvent == "play animation" then
+			local char = PlayerObjects.Dad; -- Marker
+			Switch()
+			:case('bf' or 'boyfriend', function()
+				char = PlayerObjects.BF;
+			end)
+			:case('gf' or 'grilfriend', function()
+				char = nil;
+				-- Girlfriend is not a character
+				return
+			end)
+			:default(function()
+				local var2 = tonumber(value2)
+				if var2 == nil then var2 = 0 end
+					
+				if var2 == 1 then
+					char = PlayerObjects.BF;
+				elseif var2 == 2 then
+					char = nil
+					return
+				end
+			end)(string.lower(value2))
+			
+			if char ~= nil then
+				char:PlayAnimation(string.lower(value1), true);
+				-- char.specialAnim = true; -- This also doesn't exist
+			end
 		elseif curEvent == "camera follow pos" then
-			if shared.camFollow ~= nil then
+			if camFollow ~= nil then
 				local val1 = tonumber(value1) or 0
 				local val2 = tonumber(value2) or 0
 
@@ -1406,6 +1555,84 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 					camControls.camOffset = CFrame.new(math.rad(val1/10),math.rad(val2/10), 0)
 					--camControls.ForcedPos = true
 					--print(camControls.camOffset.X .. ', ' .. camControls.camOffset.Y)
+				end
+			end
+		elseif curEvent == "screen shake" then -- supposed to shake UI as well
+			-- how screen shake works if value 1 and 2 is double
+			-- value1 [1] -> duration (shakeScreen)
+			-- value1 [2] -> intensity (shakeScreen)
+			
+			-- value2 [1] -> duration (shakeUI)
+			-- value2 [2] -> intensity (shakeUI)
+			
+			--print("screen shaked at "..value1.." intensity for "..value2.." seconds") value1 can either be one number or two numbers separated by a comma
+			local split
+			local split2 = {0, 0}
+			if value2 == nil then
+				value2 = '0, 0'
+			end
+			if string.find(value2, ',') then
+				split2 = string.split(value2, ',')
+				-- [1] duration (shakeUI)
+				-- [2] intensity (shakeUI)
+			end
+			if string.find(value1, ',') then
+				split = string.split(value1, ',')
+				value1 = split[1] -- duration (shakeScreen)
+				value2 = split[2] -- intensity (shakeScreen)
+			else
+				value1 = tonumber(value1) -- duration (shakeScreen)
+				value2 = tonumber(value2) -- intensity (shakeScreen)
+			end
+			
+			-- ShakeScreen
+			local duration = tonumber(value1) / speedModifier or 0
+			local intensity = tonumber(value2) * 1000 or 0
+			
+			-- ShakeUI
+			local dur2 = tonumber(split2[1]) / speedModifier or 0
+			local inten2 = camSizeX*tonumber(split2[2]) or 0
+
+			if duration > 0 and intensity ~= 0 then
+				spawn(function()
+					-- Screen shake was too intense so I am adjusting values
+					shakeScreen(intensity/0.9, duration)
+				end)
+			end
+
+			if dur2 > 0 and inten2 ~= 0 then
+				spawn(function()
+					shakeUI(inten2, dur2)
+				end)
+			end
+		elseif curEvent == "change scroll speed" then --['Change Scroll Speed', "Value 1: Scroll Speed Multiplier (1 is default)\nValue 2: Time it takes to change fully in seconds."],
+			if not module.settings.ForceSpeed then
+				local duration = (tonumber(value2) or 0)/speedModifier
+				local newSpeed = (module.settings.CustomSpeed * tonumber(value1) or 1)
+				local songSpeedTween = ((initialSpeed/.45)/songData.speed) * module.settings.CustomSpeed
+				local elapsed = 0
+				if duration <= 0 then -- Change speed instantly
+					initialSpeed = songData.speed * .45 * newSpeed--newSpeed
+					for i = 1, #unspawnedNotes do
+						unspawnedNotes[i].InitialPos = getPosFromTime(unspawnedNotes[i].StrumTime)
+					end
+					for i = 1, #notes do
+						notes[i].InitialPos = getPosFromTime(notes[i].StrumTime)
+					end
+				else
+					spawn(function()
+						while elapsed < duration and not songEnded do
+							songSpeedTween = numLerp(songSpeedTween, newSpeed, elapsed / duration)
+							initialSpeed = (songData.speed * .45 * songSpeedTween)
+							for i = 1, #unspawnedNotes do
+								unspawnedNotes[i].InitialPos = getPosFromTime(unspawnedNotes[i].StrumTime)
+							end
+							for i = 1, #notes do
+								notes[i].InitialPos = getPosFromTime(notes[i].StrumTime)
+							end
+							elapsed += RS.RenderStepped:Wait()
+						end
+					end)
 				end
 			end
 		elseif curEvent == "set cam speed" then
@@ -1419,56 +1646,6 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 					value2 = '#FFFFFF'
 				end
 				module.flash(tostring(value2), tonumber(value1) or 1, 0)
-			end
-		elseif curEvent == "screen shake" then -- supposed to shake UI as well
-			--print("screen shaked at "..value1.." intensity for "..value2.." seconds") value1 can either be one number or two numbers separated by a comma
-			local split
-			local split2 = {0, 0}
-			if value2 == nil then
-				value2 = '0, 0'
-			end
-			if string.find(value2, ',') then
-				split2 = string.split(value2, ',')
-			end
-			if string.find(value1, ',') then
-				split = string.split(value1, ',')
-				value2 = split[2]
-				value1 = split[1]
-			else
-				value2 = tonumber(value2)
-				value1 = tonumber(value1)
-			end
-
-			local duration = tonumber(value1)/speedModifier or 0
-			local intensity = tonumber(value2)*1000 or 0
-			local dur2 = tonumber(split2[1])/speedModifier or 0
-			local inten2 = camSizeX*tonumber(split2[2]) or 0
-
-			if duration > 0 and intensity ~= 0 then
-				spawn(function()
-					shakeScreen(intensity, duration)
-				end)
-			end
-
-			if dur2 > 0 and inten2 ~= 0 then
-				spawn(function()
-					shakeUI(inten2, dur2)
-				end)
-			end
-		elseif curEvent == "hey!" then
-			local value = 2
-			Switch()
-			:case('bf' or 'boyfriend' or '0', function()
-				value = 0
-			end)
-			:case('gf' or 'girlfriend' or '1', function()
-				value = 1
-			end)(string.lower(value1))
-			if value == 0 then
-				local char = PlayerObjects.BF
-				char:PlayAnimation("hey", true)
-			else
-				-- do somethin 
 			end
 		elseif curEvent == "lane modifier" then
 			local lane = tonumber(value1)
@@ -1487,38 +1664,15 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 				end
 				unspawnedNotes[i].InitialPos = getPosFromTime(unspawnedNotes[i].StrumTime)
 			end
-		elseif curEvent == "change scroll speed" then --['Change Scroll Speed', "Value 1: Scroll Speed Multiplier (1 is default)\nValue 2: Time it takes to change fully in seconds."],
-			if not module.settings.ForceSpeed then
-				local duration = (tonumber(value2) or 0)/speedModifier
-				local newSpeed = (module.settings.CustomSpeed * tonumber(value1) or 1)
-				local songSpeedTween = ((initialSpeed/.45)/songData.speed) * module.settings.CustomSpeed
-				local elapsed = 0
-				if duration <= 0 then
-					initialSpeed = songData.speed * .45 * newSpeed--newSpeed
-				else
-					spawn(function()
-						while elapsed < duration and not songEnded do
-							songSpeedTween = numLerp(songSpeedTween, newSpeed, elapsed / duration)
-							initialSpeed = (songData.speed * .45 * songSpeedTween)
-							for i = 1, #unspawnedNotes do
-								unspawnedNotes[i].InitialPos = getPosFromTime(unspawnedNotes[i].StrumTime)
-							end
-							for i = 1, #notes do
-								notes[i].InitialPos = getPosFromTime(notes[i].StrumTime)
-							end
-							elapsed += RS.RenderStepped:Wait()
-						end
-					end)
-				end
-			end
+		
 		end
 
-		for i,v in pairs(loadedModchartData) do
-			spawn(function(...)
+		for i,v in pairs(loadedModchartData) do -- marker
+			coroutine.resume(coroutine.create(function(...)
 				if v.EventTrigger then
 					v.EventTrigger(curEvent, value1, value2, ...)
 				end
-			end)
+			end))
 		end
 	end
 	module.processEvent = processEvent
@@ -1542,10 +1696,18 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 			newImage.Visible = true
 
 			local waitTime = 0
-
+			
+			--[[
 			while waitTime > .8 do -- Waits at least .8 seconds (not sure what the optimal time is though)
 				waitTime += HB:Wait()
 			end
+			--]]
+			
+			game:GetService("ContentProvider"):PreloadAsync({newImage})
+			
+			repeat 
+				waitTime += HB:Wait()
+			until waitTime > 2 or newImage.IsLoaded == true
 
 			LoadingStatus.PreloadedImages+=1; -- Track that an image loaded
 			newImage:Destroy()
@@ -1571,14 +1733,6 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 
 	if SongIdInfo.CameraPlayerFocus then
 		module.PositioningParts.CameraPlayer = true
-		module.PositioningParts.e = PlayerObjects.BF.Obj.PrimaryPart
-		module.PositioningParts.w = PlayerObjects.Dad.Obj.PrimaryPart
-		if SongIdInfo.BF2Animations then
-			module.PositioningParts.f = PlayerObjects.BF2.Obj.PrimaryPart
-		end
-		if SongIdInfo.Dad2Animations then
-			module.PositioningParts.t = PlayerObjects.Dad2.Obj.PrimaryPart
-		end
 	end
 
 	instrSound.SoundId='rbxassetid://' .. SongIdInfo.Instrumental
@@ -1611,6 +1765,16 @@ function module.genSong(songName, songSettings, plr2) -- plr2: 1=dad2 2=bf2
 	BFIcon.GUI.Visible = true
 	DadIcon.GUI.Visible = true
 	updateUI()
+end
+
+function module.playCutscene(name)
+	if loadedCutscene then
+		if loadedCutscene[name] then
+			loadedCutscene[name](); -- Play whatever the cutscene is
+		end
+	else
+		warn('There Aint No Cutscene')
+	end
 end
 
 function updateUI()
@@ -1758,6 +1922,9 @@ function module.changeIcon(name,side) -- false:dad  true:bf
 end
 
 function module.changeAnimation(name,player,speed,looped,force)
+	player:ChangeAnim(name, speedModifier)
+	
+	--[[
 	if not module.settings.ForcePlayerAnim or force and repS.Animations.CharacterAnims:FindFirstChild(name) then
 		local Animation = repS.Animations.CharacterAnims:FindFirstChild(name)
 		local needsProps = Animation:GetAttribute("CharacterName")
@@ -1840,17 +2007,8 @@ function module.changeAnimation(name,player,speed,looped,force)
 			player.Microphone = Mic
 		end
 	end
+	--]]
 end
-
---[[local executeALuaState = function(func,args)
-	if not repS.Modules.Modcharts[songData.song] then return end
-	if repS.Modules.Modcharts[songData.song][func] == nil then return end
-	if not args then args = {} end
-
-	task.spawn(function()
-		repS.Modules.Modcharts[songData.song][func](table.unpack(args))
-	end)
-end]]
 
 local function eventNoteEarlyTrigger(eventNote)
 	local returnedValue = 0
@@ -1916,9 +2074,13 @@ function resync()
 end
 
 function module.startCountdown(customIcon)
-	--TS:Create(cam, TweenInfo.new(2.5/speedModifier,Enum.EasingStyle.Quad,Enum.EasingDirection.InOut),{FieldOfView = 70-(defaultCamZoom*25)}):Play()
-
-	module.flash("#000000", 5/speedModifier, 0) -- Hide the game while it loads so that it doesn't look as bad
+	if loadedCutscene and loadedCutscene.Start then
+		--module.flash('#000000', 0, 0)
+		gameUI.realGameUI.Flash.Visible = false
+		loadedCutscene.Start(gameUI,module)
+	else
+		module.flash("#000000", 5/speedModifier, 0) -- Hide the game while it loads so that it doesn't look as bad
+	end
 
 	if SongIdInfo.mapProps and repS.Maps:FindFirstChild(SongIdInfo.mapProps) then
 		mapProps.Parent = workspace.Maps
@@ -1987,8 +2149,10 @@ function module.startCountdown(customIcon)
 			end
 		end
 	end
-
-	--[[if module.settings.ChillMode and (module.PositioningParts.isOpponentAvailable == nil or game.Players.LocalPlayer.Name == 'pludo903') then
+	
+	Botplay = false
+	if module.settings.ChillMode and module.PositioningParts.isOpponentAvailable == nil then
+		Botplay = true
 		for _,button in next,gameUI.TouchScreen:GetChildren() do
 			UserInputBind.RemoveBind(button)
 			button:Destroy()
@@ -1996,7 +2160,16 @@ function module.startCountdown(customIcon)
 		for i=1,DirAmmo[songData.mania] do
 			UserInputBind.ClearBinds("Direction" .. i)
 		end
-	end]]
+	end
+	
+	-- Check player settings so that the player doesn't have "Advantages" to get a better score
+	validScore = true
+	if module.settings.PlaybackSpeed ~= 1 then
+		validScore = false
+	elseif Botplay then
+		validScore = false
+	end
+	
 	startedCountdown=true
 
 	local function generateReceptors(player)
@@ -2091,11 +2264,23 @@ function module.startCountdown(customIcon)
 							babyArrow:PlayAnimation("static")
 						end
 					end)
+				elseif(not flipMode) and Botplay then
+					babyArrow.AnimationFinished:Connect(function(anim)
+						if(anim:sub(-7) == "confirm")then
+							babyArrow:PlayAnimation("static")
+						end
+					end)
 				end
 			else
 				table.insert(flipMode and playerStrums or dadStrums,babyArrow)
 				table.insert(leftStrums,babyArrow)
 				if(not flipMode)then
+					babyArrow.AnimationFinished:Connect(function(anim)
+						if(anim:sub(-7) == "confirm")then
+							babyArrow:PlayAnimation("static")
+						end
+					end)
+				elseif (flipMode) and Botplay then
 					babyArrow.AnimationFinished:Connect(function(anim)
 						if(anim:sub(-7) == "confirm")then
 							babyArrow:PlayAnimation("static")
@@ -2310,6 +2495,29 @@ function module.startCountdown(customIcon)
 		end)
 	end
 end
+
+local currIconTweens = {}
+function tweenIconSize(Icon,time)
+	if currIconTweens[Icon] == nil or currIconTweens[Icon] then
+		currIconTweens[Icon] = false
+	end
+	local function tweenFunc()
+		currIconTweens[Icon] = true
+		local callTime = tick()
+		local scaleStart = 0.875
+		local scaleEnd = 0.7
+		local scaleDiff = scaleEnd - scaleStart
+		repeat
+			local val = scaleStart + (scaleDiff * TS:GetValue((tick() - callTime) / time,Enum.EasingStyle.Sine,Enum.EasingDirection.Out))
+			Icon.Scale = Vector2.new(val,val)
+			RS.RenderStepped:Wait()
+		until tick() > callTime+time or not currIconTweens[Icon]
+		Icon.Scale = Vector2.new(scaleEnd,scaleEnd)
+		currIconTweens[Icon] = false
+	end
+	local wrapped = coroutine.wrap(tweenFunc)
+	wrapped()
+end
 --[[
 function module.PlaySong(n) -- keeping this, may get deprecated in the future.
 	generatedSong=false
@@ -2358,7 +2566,6 @@ function module.endSong()
 						tostring(accuracy)
 					};
 				};
-				--table.insert(module.settings.SongData, songPlayed)
 				module.settings.SongData[songPlayed] = saveThis
 			end
 
@@ -2368,41 +2575,34 @@ function module.endSong()
 			end
 		end
 	end
-	--if #module.settings.SongScores > 0 then
-	--	for i = 1, #module.settings.SongScores do
-	--		--print(module.PlayerStats.Score)
-	--		if module.settings.SongScores[i][1] == songPlayed and module.PlayerStats.Score > 0 then
-	--			if module.settings.SongScores[i][2] < module.PlayerStats.Score or module.settings.SongScores[i][2] == nil then
-	--				module.settings.SongScores[i] = {
-	--					songPlayed,
-	--					module.PlayerStats.Score,
-	--					accuracy
-	--				}
-	--			end
-	--		end
-	--	end
-	--else
-	--	table.insert(module.settings.SongScores, songPlayed)
-	--	module.settings.SongScores[1] = {
-	--		songPlayed,
-	--		module.PlayerStats.Score,
-	--		accuracy
-	--	}
-	--end
-	--[[local InfoRetriever = repS.InfoRetriever
 	
-	local cloneData = {
-		module.settings.SongScores
-	}
-	InfoRetriever:InvokeServer(0x2,cloneData)]]
+	if game.Players.LocalPlayer then -- Make the player visible
+		for i,v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+			if (v:IsA("BasePart") or v:IsA("Decal")or v:IsA("MeshPart")) and v.Name~="HumanoidRootPart" then
+				v.Transparency = 0
+			end
+			if (v:IsA("SurfaceGui") or v:IsA("BillboardGui") or v:IsA("Beam")) then
+				v.Enabled = true
+			end
+		end
+	end
 
 	shared.songData=nil;
 	shared.song=nil;
-	shared.songSpeed=0;
-	speedModifier = 1;
+	shared.songSpeed=nil;
+	shared.Receptors={};
+	shared.sections=nil;
 
 	if CameraTween then
 		CameraTween:Cancel()
+	end
+	
+	-- Remove the tweens
+	for _,tween in pairs(StoredTweens) do
+		if tween then
+			tween:Cancel()
+			tween = nil
+		end
 	end
 
 	for i = 1, #loadedModchartData do
@@ -2412,13 +2612,35 @@ function module.endSong()
 	end
 
 	generatedSong=false
-	events = {}
-	eventNotes = {}
-	loadedModchartData = {}
-	startingSong=false
-	boomSpeed = 4
+	events = {};
+	eventNotes = {};
+	loadedModchartData = {};
+	loadedCutscene = nil;
+	allReceptors = {};
+	modcharts = {};
+	velocityMarkers = {};
+	sliderVelocities = {};
+	currIconTweens = {};
+	Botplay = nil
+	startingSong = nil
+	startedCountdown = nil
+	GFSection = nil
+	boomSpeed = nil
 	camSpeed = 1
+	songLength = nil
+	falseSongLength = nil
 	defaultCamZoom = .05
+	initialSpeed = nil
+	speedModifier = 1;
+	
+	-- Undefine Stats
+	accuracy = nil
+	combo = nil
+	opponentCombo = nil
+	totalPlayed = nil
+	totalSteps = nil
+	totalBeats = nil
+	totalNotesHit = nil
 
 	resetGroup("Map")
 
@@ -2454,7 +2676,19 @@ function module.endSong()
 	for _,Note in next,notes do
 		if Note and Note.Destroy then Note:Destroy() end
 	end
-	--2.Character:FindFirstChild("HumanoidRootPart").Anchored = false
+	ratingLabels = {}
+	noteLanes = {}
+	susNoteLanes = {}
+	averageAccuracy = {}
+	playerStrums = {}
+	leftStrums = {}
+	rightStrums = {}
+	dadStrums = {}
+	notes = {}
+	opponentNotes = {}
+	currentSection = {}
+	updateMotions = {}
+	
 	resetGroup("PositioningParts")
 
 	bindNameDir = {}
@@ -2462,11 +2696,18 @@ function module.endSong()
 	cam.CameraType = Enum.CameraType.Custom
 	cam.FieldOfView = 70
 	flipMode = nil
+	validScore = nil
+	
+	-- Make it nil otherwise it will keep playing the character destroy function (also this clears memory)
+	if PlayerObjects then
+		for _,char in pairs(PlayerObjects) do
+			if char then
+				char:Destroy()
+			end
+		end
+	end
+	PlayerObjects = nil -- Clear the table so that it isn't called after the song ends (DO NOT CHANGE THIS. WILL BREAK A BUNCH)
 	songEndEvent:Fire()
-	if PlayerObjects.BF then PlayerObjects.BF:Destroy() end
-	if PlayerObjects.Dad then PlayerObjects.Dad:Destroy() end
-	if PlayerObjects.BF2 then PlayerObjects.BF2:Destroy() end
-	if PlayerObjects.Dad2 then PlayerObjects.Dad2:Destroy() end
 end
 
 function module.startSong()
@@ -2490,12 +2731,6 @@ function module.startSong()
 		end	
 	end
 end
-----dusttale
-local phantomActive = false
-local bonedCount = 0
----- sonic from the executable
-local fogCount = 0
-local fogDrain = 0
 
 function module.flash(hex,speed,int)
 	if type(hex) == "number" then
@@ -2514,6 +2749,7 @@ function module.flash(hex,speed,int)
 	local Goal = {}
 	Goal.BackgroundTransparency = 1
 	local tween = TS:Create(frame,tweenInfo,Goal)
+	addTween(tween, '_CameraFlashTween') -- Adds the tween to a list that will automatically cancel and remove tweens when the song ends
 	tween:Play()
 end
 
@@ -2535,10 +2771,17 @@ end
 
 module.setGameUITransparency = setGameUITransparency
 
+----dusttale
+--local phantomActive = false
+--local bonedCount = 0
+---- sonic from the executable
+--local fogCount = 0
+--local fogDrain = 0
 function GoodHit(daNote)
 	if(flipMode and daNote.MustPress or not flipMode and not daNote.MustPress)then
 		camZooming=true
 	end
+	if not daNote or daNote.Update == nil then return end
 	local noteType = daNote.Type
 	if(not daNote.IsSustain)then
 		if noteType ~= "None" then
@@ -2739,7 +2982,24 @@ function GoodHit(daNote)
 			char = daNote.NoteData <= 3 and (flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2) or (flipMode and PlayerObjects.Dad or PlayerObjects.BF)
 		end
 	elseif daNote.bro ~= 0 then
-		if daNote.bro == 1 then
+		if type(daNote.bro) == "string" then
+			if not PlayerObjects[daNote.bro] then
+				warn("Invalid Character")
+				return;
+			else
+				char = PlayerObjects[daNote.bro]
+			end
+		elseif type(daNote.bro) == 'table' then
+			daNote.noAnimation = true; -- this is here for a reason
+			for _,ch in pairs(daNote.bro) do
+				if not PlayerObjects[ch] then
+					warn("Invalid Character")
+					return;
+				else
+					PlayerObjects[ch]:PlayAnimation("sing" .. sDir[daNote.NoteData+1],true)
+				end
+			end
+		elseif daNote.bro == 1 then
 			char = (flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2)
 		elseif daNote.bro == 2 then
 			char = daNote.NoteData <= 3 and (flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2) or (flipMode and PlayerObjects.Dad or PlayerObjects.BF)
@@ -2751,35 +3011,14 @@ function GoodHit(daNote)
 	else
 		char = (flipMode and PlayerObjects.Dad or PlayerObjects.BF)
 	end -- shaggy thing
-	char.Holding=daNote.HoldParent;
-	--if songData.song == "betrayal" or songData.song == "betrayal-blackout" then
-	--char = PlayerObjects.BF2
-	--end
-	--[[
-	if songData.song == "betrayal" or songData.song == "betrayal-blackout" and flipMode == false then
-		if daNote.noAnimation then
-			if daNote.Type == "BO" then
-				PlayerObjects.BF2:PlayAnimation("sing" .. sDir[daNote.NoteData+1],true)
-			elseif daNote.Type == "BO" and GFSection then
-				PlayerObjects.BF:PlayAnimation("sing" .. sDir[daNote.NoteData+1],true)
-			end
-		else
-			if daNote.Type == "GF Sing" and not GFSection then
-				PlayerObjects.BF2:PlayAnimation("sing" .. sDir[daNote.NoteData+1],true)
-			elseif daNote.Type == "GF Sing" and GFSection then
-				PlayerObjects.BF:PlayAnimation("sing" .. sDir[daNote.NoteData+1],true)
-			elseif GFSection then
-				PlayerObjects.BF2:PlayAnimation("sing" .. sDir[daNote.NoteData+1],true)
-			elseif not GFSection then
-				char:PlayAnimation("sing" .. sDir[daNote.NoteData+1],true)
-			end
-		end]]
-	--else
-	if shared.cancelAnim == false and not daNote.noAnimation then
-		char:PlayAnimation("sing" .. sDir[daNote.NoteData+1],true)
-	end	
-	--end
-	--end
+	
+	if char then
+		char.Holding=daNote.HoldParent;
+		if shared.cancelAnim == false and not daNote.noAnimation then
+			char:PlayAnimation("sing" .. sDir[daNote.NoteData+1],true)
+		end	
+	end
+	
 	UpdateAccuracy()
 end
 
@@ -2799,7 +3038,7 @@ function resetGroup(group)
 		ScoreLabel.Size = UDim2.fromScale(1,0.05)
 		gameUI.realGameUI.Rotation = 0
 		gameUI.realGameUI.Notes.Rotation = 0
-		gameUI.realGameUI.Overlay.Visible = false
+		--gameUI.realGameUI.Overlay.Visible = false
 		gameUI.realGameUI.Flash.Visible = false
 		gameUI.realGameUI.Notes.Rotation = 0
 		gameUI.waste:ClearAllChildren()
@@ -2869,7 +3108,7 @@ local function spawnNoteSplash(note)
 	local obj2
 	if typeof(texture) == "string" and repS.Modules.Assets["noteSkins"..songMania.."K"]:FindFirstChild(texture) then
 		obj2 = repS.Modules.Assets["noteSkins"..songMania.."K"][texture]:Clone()
-	elseif texture:IsA("ImageLabel") then
+	elseif typeof(texture) ~= "string" and texture:IsA("ImageLabel") then
 		obj2 = texture:Clone()
 	else
 		warn("Not a valid note splash, must be a ImageLabel or a NoteSplash name")
@@ -2882,34 +3121,52 @@ local function spawnNoteSplash(note)
 	local delayT = math.random(-2, 2)
 	local setScale = (internalSettings.autoSize * module.settings.customSize)
 	local thePlayerStrum = playerStrums[id]
-	local splash = Receptor.new(obj2, true, obj2:GetAttribute('scale') or 1.85, true, noteScaleRatio)
+	local splash = Receptor.new(obj2, true, obj2:GetAttribute('scale') or 1, true, noteScaleRatio)
 	splash.GUI.ImageRectSize = splash.GUI.ImageRectSize * 2
 	splash.Index = id
 	splash.Direction = ""
 	splash.Scale=Vector2.new(.7,.7) * setScale
-
-	if(id==1)then
-		splash:AddSparrowXML(xml, 'splash 1', "note splash purple " .. animNum, 24 + delayT * speedModifier,false)
-		splash.Direction = "left"
-	elseif(id==2)then
-		splash:AddSparrowXML(xml, 'splash 2', "note splash blue " .. animNum, 24 + delayT * speedModifier,false)
-		splash.Direction = "down"
-	elseif(id==3)then
-		splash:AddSparrowXML(xml, 'splash 3', "note splash green " .. animNum, 24 + delayT * speedModifier,false)
-		splash.Direction = "up"
-	elseif(id==4)then
-		splash:AddSparrowXML(xml, 'splash 4', "note splash red " .. animNum, 24 + delayT * speedModifier,false)
-		splash.Direction = "right"
-	end
-
-	local arrowSpacing = 112
-	if module.settings.MiddleScroll then
-		splash.DefaultX = (((noteScaleRatio.X/2)) - (((112 * songMania)/2)*setScale)) + ((112) * (id-1))-- - (112 * (DirAmmo[songData.mania] - 4))
+	
+	if songData.mania ~= 0 then -- shaggy system
+		local pDe = {"left", "down", "up", "right"}
+		local pPre = {"purple","blue","green","red"}
+		if songData.mania == 1 then
+			pPre = {"purple","green","red","yellow","blue","dark"}
+		elseif songData.mania == 2 then
+			pPre = {"purple","blue","green","red","white","yellow","violet","darkred","dark"}
+		elseif songData.mania == 3 then
+			pPre = {"purple","blue","white","green","red"}
+		elseif songData.mania == 4 then
+			pPre = {"purple","green","red","white","yellow","violet","dark"}
+		elseif songData.mania == 5 then
+			pPre = {"purple","blue","green","red","yellow","violet","darkred","dark"}
+		end
+		splash:AddSparrowXML(xml,'splash ' .. id, "note splash " .. pPre[id] .. " " .. animNum, 24 + delayT * speedModifier, false);
+		splash.Direction = pDe[id]
 	else
-		if flipMode == false then
-			splash.DefaultX = (noteScaleRatio.X - ((112 * songMania)*setScale)) + (112 * (id-1))-- - (112 * (DirAmmo[songData.mania] - 4))
+		if(id==1)then
+			splash:AddSparrowXML(xml, 'splash 1', "note splash purple " .. animNum, 24 + delayT * speedModifier,false)
+			splash.Direction = "left"
+		elseif(id==2)then
+			splash:AddSparrowXML(xml, 'splash 2', "note splash blue " .. animNum, 24 + delayT * speedModifier,false)
+			splash.Direction = "down"
+		elseif(id==3)then
+			splash:AddSparrowXML(xml, 'splash 3', "note splash green " .. animNum, 24 + delayT * speedModifier,false)
+			splash.Direction = "up"
+		elseif(id==4)then
+			splash:AddSparrowXML(xml, 'splash 4', "note splash red " .. animNum, 24 + delayT * speedModifier,false)
+			splash.Direction = "right"
+		end
+
+		local arrowSpacing = 112
+		if module.settings.MiddleScroll then
+			splash.DefaultX = (((noteScaleRatio.X/2)) - (((112 * songMania)/2)*setScale)) + ((112) * (id-1))-- - (112 * (DirAmmo[songData.mania] - 4))
 		else
-			splash.DefaultX = (112 * (id-1))
+			if flipMode == false then
+				splash.DefaultX = (noteScaleRatio.X - ((112 * songMania)*setScale)) + (112 * (id-1))-- - (112 * (DirAmmo[songData.mania] - 4))
+			else
+				splash.DefaultX = (112 * (id-1))
+			end
 		end
 	end
 	splash.DefaultX = id*54
@@ -2922,7 +3179,7 @@ local function spawnNoteSplash(note)
 	splash:SetPosition(thePlayerStrum.X,thePlayerStrum.Y)
 	splash:PlayAnimation('splash ' .. id, false)
 	obj2.Name = "Splash " .. id
-	delay(((24 + delayT)/60)/speedModifier,function()
+	delay(((6.6 + delayT)/60)/speedModifier,function()
 		obj2:Destroy()
 		splash:Destroy()
 	end)
@@ -2935,9 +3192,9 @@ local ratingNamesSize = {
 	trash = Vector2.new(413,180);
 }
 function ScorePopup(noteDiff, note)
-	local rating = ScoreUtils:GetRating(noteDiff)
-	local intScore = ScoreUtils:GetScore(rating)
-	totalNotesHit += ScoreUtils:GetAccuracy(rating)
+	local rating = ScoreUtils:GetRating(noteDiff) or "sick"
+	local intScore = ScoreUtils:GetScore(rating) or 0
+	totalNotesHit += ScoreUtils:GetAccuracy(rating) or 1
 
 	if(rates[rating])then
 		rates[rating]+=1
@@ -2968,15 +3225,6 @@ function ScorePopup(noteDiff, note)
 	ratingText.Position=UDim2.new(.5,-40,.5,140)
 	ratingText:SetAttribute("Acceleration",Vector2.new(0,550))
 	local Side = not module.PositioningParts.PlayAs and "Right" or "Left"
-	--[[if module.PositioningParts.PlayAs == 1 then
-		Side = "Left"
-	elseif module.PositioningParts.PlayAs == 2 then
-		Side = "Right"
-	elseif module.PositioningParts.PlayAs then
-		Side = "Left"
-	elseif module.PositioningParts.PlayAs == false then
-		Side = "Right"
-	end]]
 	ratingText:SetAttribute("Side", Side)
 	ratingText:SetAttribute("Velocity",Vector2.new(RNG:NextInteger(0,10),-RNG:NextInteger(140,175)))
 	ratingText:SetAttribute("Offset",Vector2.new(0,0))
@@ -3020,7 +3268,6 @@ function ScorePopup(noteDiff, note)
 		end)
 		tw:Play()
 	end
-	--coolText.Size = game:service'TextService':GetTextSize()
 	-- MS Hit Offset counter
 	if not module.settings.ShowHitOffset then return end
 	if #averageAccuracy >= 50 then
@@ -3028,7 +3275,10 @@ function ScorePopup(noteDiff, note)
 	end
 	averageAccuracy[#averageAccuracy+1] = noteDiff
 	local median = 0
-	table.foreach(averageAccuracy,function(i,v) median += v end)
+	for _,v in pairs(averageAccuracy) do
+		median += v
+	end
+	--table.foreach(averageAccuracy,function(i,v) median += v end)
 	median /= #averageAccuracy
 	local processedNoteDiff = tostring(math.floor(noteDiff))
 	local isNegative = noteDiff < 0
@@ -3121,6 +3371,9 @@ function module.handleHit(strum,noteDiff,noteType,noteDir,sussy) -- this is what
 	local char
 	for i = 1,#opponentNotes do
 		local note= opponentNotes[i]
+		if note.Update==nil then
+			continue
+		end
 		if(note.StrumTime==strum and note.NoteData==noteDir)then
 			if note.dType ~= 0 then
 				if note.dType == 1 then
@@ -3129,12 +3382,21 @@ function module.handleHit(strum,noteDiff,noteType,noteDir,sussy) -- this is what
 					char = note.NoteData <= 3 and (not flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2)
 				end
 			elseif note.bro ~= 0 then
-				if note.bro == 1 then
+				if type(note.bro) == "string" then
+					if not PlayerObjects[note.bro] then
+						warn("Invalid Character")
+						break;
+					else
+						char = PlayerObjects[note.bro]
+					end
+				elseif note.bro == 1 then
 					char = (not flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2)
 				elseif note.bro == 2 then
 					char = note.NoteData <= 3 and (not flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2)
 				elseif note.bro == 3 then
 					char = (not flipMode and PlayerObjects.Dad2 or PlayerObjects.BF2)
+					char:PlayAnimation("sing" .. sDir[note.NoteData+1],true)
+					char = (not flipMode and PlayerObjects.Dad or PlayerObjects.BF)
 				end
 			else
 				char = (not flipMode and PlayerObjects.Dad or PlayerObjects.BF)
@@ -3161,7 +3423,8 @@ function module.fakeScorePopup(noteDiff)
 	--ratingText.TextStrokeTransparency=.8
 	--ratingText.TextSize=94
 	local scaleSize = ((ratingNamesSize[rating]) * 0.45) * screenMul -- this should fix the size difference of the opponent's ratings
-	ratingText.Size = UDim2.fromOffset(scaleSize.X / (ScreenRatio/defaultScreenRatio),scaleSize.Y / (ScreenRatio/defaultScreenRatio))
+	--ratingText.Size = UDim2.fromOffset(scaleSize.X / (ScreenRatio/defaultScreenRatio),scaleSize.Y / (ScreenRatio/defaultScreenRatio))
+	ratingText.Size = UDim2.fromOffset(scaleSize.X,scaleSize.Y)
 	if SongIdInfo.RatingSet then
 		ratingText.Image=SongIdInfo.RatingSet[rating]
 	else
@@ -3218,7 +3481,6 @@ function module.fakeScorePopup(noteDiff)
 			tw:Play()
 		end
 	end
-	--coolText.Size = game:service'TextService':GetTextSize()
 end
 
 function module.OpponentMissNote(strum,noteDiff,noteType,noteDir,sussy)
@@ -3300,12 +3562,6 @@ function MissNote(note)
 	end
 	
 end
--- TODO: play miss sound
-
--- NEBULA HERE
--- IM HERE!! WOW!!
--- REWROTE THE INPUT TO BE GOOD
--- LOL
 
 function GetNextHittable(lane)
 	for i = 1,#lane do
@@ -3314,8 +3570,8 @@ function GetNextHittable(lane)
 		end
 	end
 end
---if daNote.MustPress and (not daNote.GoodHit) and module.PositioningParts.isOpponentAvailable == nil and daNote.MissPunish and startedCountdown and module.settings.ChillMode then --or module.settings.ChillMode and daNote.MustPress and not daNote.GoodHit and daNote.MissPunish and startedCountdown and module.PositioningParts.isOpponentAvailable == nil then
-function CheckInput(bind,io) -- if this is bad then just uncomment the old input, seemed reliable enough in my engine tho
+
+function CheckInput(bind,io)
 	local dir = GetDirectionForKey(bind)
 	local hitSomething=false;
 
@@ -3326,7 +3582,7 @@ function CheckInput(bind,io) -- if this is bad then just uncomment the old input
 			GoodHit(nextHit);
 		end
 
-		if(not hitSomething and GetNextHittable(susNoteLanes[dir])==nil)then
+		if(not hitSomething and GetNextHittable(susNoteLanes[dir])==nil) then
 			MissNote();
 		end
 	end
@@ -3347,8 +3603,20 @@ function checkHeldKeys()
 	local heldDirections = HeldDirections()
 	for i = 1,#notes do
 		local n = notes[i]
-		if(n.CanBeHit and n.MustPress and heldDirections[n.NoteData] and n.IsSustain) and playerStrums[n.NoteData+1].CanBePressed then
-			GoodHit(n);
+		if Botplay then
+			if(n.CanBeHit and n.MustPress) and playerStrums[n.NoteData+1].CanBePressed then
+				if n.IsSustain then
+					GoodHit(n)
+				else -- Make it delayed so it is a "good" hit
+					delay(0.14 / speedModifier, function()
+						GoodHit(n);
+					end)
+				end
+			end
+		else
+			if(n.CanBeHit and n.MustPress and heldDirections[n.NoteData] and n.IsSustain) and playerStrums[n.NoteData+1].CanBePressed then
+				GoodHit(n);
+			end
 		end
 	end
 	for i,v in next, playerStrums do
@@ -3359,7 +3627,9 @@ function checkHeldKeys()
 			end
 			dDeb[i-1] = true
 		elseif(not heldDirections[i-1])then
-			v:PlayAnimation("static")
+			if not Botplay then
+				v:PlayAnimation("static")
+			end
 			if not dDeb[i-1] then
 				continue
 			end
@@ -3391,8 +3661,9 @@ function beatHit()
 	end
 
 	if(camZooming and camControls.hudZoom < 0.85 and curBeat%4==0 and module.settings.CameraZooms) and not camControls.noBump then
-		camControls.hudZoom+=0.015 -- 0.03
-		camControls.camZoom+=0.03 -- 0.015
+		-- Makes the camera zoom in on the beat
+		camControls.hudZoom+=0.015
+		camControls.camZoom+=0.03
 	end
 
 	for i,v in pairs(loadedModchartData) do
@@ -3402,10 +3673,6 @@ function beatHit()
 			end
 		end))
 	end
-
-	--[[if(curBeat%gfSpeed==0)then
-		--print("GF DANCE")
-	end]]
 
 	if PlayerObjects.BF and (not PlayerObjects.BF:IsSinging()) and totalBeats%2 == 1 then
 		PlayerObjects.BF:Dance()
@@ -3441,29 +3708,6 @@ function beatHit()
 	end
 end
 
-local currIconTweens = {}
-function tweenIconSize(Icon,time)
-	if currIconTweens[Icon] == nil or currIconTweens[Icon] then
-		currIconTweens[Icon] = false
-	end
-	local function tweenFunc()
-		currIconTweens[Icon] = true
-		local callTime = tick()
-		local scaleStart = 0.875
-		local scaleEnd = 0.7
-		local scaleDiff = scaleEnd - scaleStart
-		repeat
-			local val = scaleStart + (scaleDiff * TS:GetValue((tick() - callTime) / time,Enum.EasingStyle.Sine,Enum.EasingDirection.Out))
-			Icon.Scale = Vector2.new(val,val)
-			RS.RenderStepped:Wait()
-		until tick() > callTime+time or not currIconTweens[Icon]
-		Icon.Scale = Vector2.new(scaleEnd,scaleEnd)
-		currIconTweens[Icon] = false
-	end
-	local wrapped = coroutine.wrap(tweenFunc)
-	wrapped()
-end
-
 function stepHit()
 	totalSteps+=1
 	lastStep+=Conductor.stepCrochet
@@ -3471,6 +3715,21 @@ function stepHit()
 	if(Conductor.SongPos>lastStep+(Conductor.stepCrochet*3))then
 		lastStep=Conductor.SongPos
 		totalSteps=math.ceil(lastStep/Conductor.stepCrochet);
+	end
+	
+	if totalSteps > curStep then
+		totalSteps = curStep
+	end
+	if totalSteps < curStep then
+		for i,v in pairs(loadedModchartData) do
+			coroutine.resume(coroutine.create(function()
+				if(v and v.StepHit)then -- checks if there is a modchart function for StepHit
+					v.StepHit(totalSteps)
+				end	
+			end))
+		end
+		
+		totalSteps +=1
 	end
 
 	if(totalSteps%4==0)then
@@ -3490,11 +3749,11 @@ function stepHit()
 	local offset = (SongIdInfo.Offset or 0) + (module.settings.ChartOffset/1000)
 
 	if(songData.needsVoices)then -- When the song has a voices song it checks to see if the TimePosition of the song is off by a bit.
-		if(instrPos-(songPos - offset)>(20 * speedModifier) or voicePos-(songPos - offset) > (20 * speedModifier))then
+		if(instrPos-(songPos - offset)>(3 * speedModifier) or voicePos-(songPos - offset) > (3 * speedModifier))then
 			resync() -- This will readjust the songs to be at the correct time
 		end
 	else
-		if(instrPos - (songPos - offset)>(20 * speedModifier))then
+		if(instrPos - (songPos - offset)>(3 * speedModifier))then
 			resync()
 		end
 	end
@@ -3747,17 +4006,6 @@ function module.ChangeNoteSkin(name,boolSide,force,mania)
 		end
 	end
 end
-
-function getYPos(note)                  
-	local baseYVal = 0;
-	if(note.MustPress)then
-		baseYVal = (playerStrums[note.NoteData+1]:GetPosition().Y)
-	else
-		baseYVal = (dadStrums[note.NoteData+1]:GetPosition().Y)
-	end
-	return (baseYVal+(((note.InitialPos)-Conductor.CurrentTrackPos)*(Conductor.Downscroll and -1 or 1)))*(note.ScrollMultiplier)
-end
-
 
 if _G.HBGameHandlerConnection then
 	_G.HBGameHandlerConnection:Disconnect()
@@ -4014,7 +4262,7 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 
 
 		for i = 1,#notes do
-			local daNote:Note=notes[i]
+			local daNote=notes[i]
 			if(daNote.Update==nil)then
 				continue
 			end
@@ -4062,7 +4310,14 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 								char = daNote.NoteData <= 3 and (flipMode and PlayerObjects.BF2 or PlayerObjects.Dad2) or (flipMode and PlayerObjects.BF or PlayerObjects.Dad)
 							end
 						elseif daNote.bro ~= 0 then
-							if daNote.bro == 1 then
+							if type(daNote.bro) == "string" then
+								if not PlayerObjects[daNote.bro] then
+									warn("Invalid Character")
+									break;
+								else
+									char = PlayerObjects[daNote.bro]
+								end
+							elseif daNote.bro == 1 then
 								char = (flipMode and PlayerObjects.BF2 or PlayerObjects.Dad2)
 							elseif daNote.bro == 2 then
 								char = daNote.NoteData <= 3 and (flipMode and PlayerObjects.BF2 or PlayerObjects.Dad2) or (flipMode and PlayerObjects.BF or PlayerObjects.Dad)
@@ -4098,7 +4353,6 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 						else
 							module.PlayerStats.Health -= internalSettings.OpponentNoteDrain
 						end
-
 					end
 					if(songData.needsVoices)then
 						voiceSound.Volume = (SongIdInfo.VoiceVolume or 2)*(module.settings.SongVolume/100)
@@ -4123,56 +4377,34 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 					end
 					daNote:Destroy()
 				end
-				local yPos = getYPos(daNote);
 				daNote.ReceptorX = receptor.GUI.Position.X.Scale
-				if daNote.scrollDirection == "None" then
-					daNote:SetPosition(
-						daNote.manualXOffset,
-						yPos)
-				elseif daNote.scrollDirection == "Down" then
-					local baseYVal = 0;
-					if(daNote.MustPress)then
-						baseYVal = (playerStrums[daNote.NoteData+1]:GetPosition().Y)
-					else
-						baseYVal = (dadStrums[daNote.NoteData+1]:GetPosition().Y)
-					end
-					daNote:SetPosition(
-						daNote.manualXOffset,
-						(baseYVal+((daNote.InitialPos-Conductor.CurrentTrackPos)*(true and -1 or 1)))*(daNote.ScrollMultiplier))
-				elseif daNote.scrollDirection == "Up" then 
-					local baseYVal = 0;
-					if(daNote.MustPress)then
-						baseYVal = (playerStrums[daNote.NoteData+1]:GetPosition().Y)
-					else
-						baseYVal = (dadStrums[daNote.NoteData+1]:GetPosition().Y)
-					end
-					daNote:SetPosition(
-						daNote.manualXOffset, 
-						(baseYVal+((daNote.InitialPos-Conductor.CurrentTrackPos)*(false and -1 or 1)))*(daNote.ScrollMultiplier))
-				elseif daNote.scrollDirection == "Right" then
-					local baseYVal = 0;
-					if(daNote.MustPress)then
-						baseYVal = (playerStrums[daNote.NoteData+1]:GetPosition().Y)
-					else
-						baseYVal = (dadStrums[daNote.NoteData+1]:GetPosition().Y)
-					end
-					daNote:SetPosition(
-						(daNote.manualXOffset+((daNote.InitialPos-Conductor.CurrentTrackPos)*(false and -1 or 1)))*(daNote.ScrollMultiplier),
-						baseYVal)
-				elseif daNote.scrollDirection == "Left" then
-					local baseYVal = 0;
-					if(daNote.MustPress)then
-						baseYVal = (playerStrums[daNote.NoteData+1]:GetPosition().Y)
-					else
-						baseYVal = (dadStrums[daNote.NoteData+1]:GetPosition().Y)
-					end
-					daNote:SetPosition(
-						(daNote.manualXOffset+((daNote.InitialPos-Conductor.CurrentTrackPos)*(true and -1 or 1)))*(daNote.ScrollMultiplier),
-						baseYVal)
+				local yVel = daNote.YVel or (Conductor.Downscroll and -1 or 1)
+				local xVel = daNote.XVel or 0
+				
+				if daNote.scrollDirection == "Down" then yVel = -1
+				elseif daNote.scrollDirection == "Up" then yVel = 1
+				elseif daNote.scrollDirection == "Left" then xVel = -1
+				elseif daNote.scrollDirection == "Right" then xVel = 1 end
+				
+				local baseYVal = 0
+				if daNote.MustPress then
+					baseYVal = (playerStrums[daNote.NoteData+1]:GetPosition().Y)
+				else
+					baseYVal = (dadStrums[daNote.NoteData+1]:GetPosition().Y)
 				end
+				
+				local pos = daNote.InitialPos-Conductor.CurrentTrackPos
+				if daNote.IsSustain and (yVel ~= -1 and yVel ~= 1) and xVel ~= 0 then -- The extra conditionals are there because the game gets a tad laggier running the equation
+					daNote.NoteObject.Rotation = (math.atan2(xVel, -yVel) * (180/math.pi)+360)
+				end
+				
+				daNote:SetPosition(
+					xVel ~= 0 and daNote.manualXOffset+((pos)*(xVel))*(daNote.ScrollMultiplier) or daNote.manualXOffset,
+					(baseYVal+((pos)*(yVel)))*daNote.ScrollMultiplier
+				)
 				daNote:Update()
 				if(daNote.TooLate)then
-					if(daNote.TooLate or not daNote.GoodHit) and (daNote.HealthLoss==0) and daNote.MustPress and not daNote.Destroyed and daNote.MissPunish then
+					if not Botplay and (daNote.TooLate or not daNote.GoodHit) and (daNote.HealthLoss==0) and daNote.MustPress and not daNote.Destroyed and daNote.MissPunish then
 						--voiceSound.Volume=0
 						MissNote(daNote);
 					end
@@ -4195,16 +4427,16 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 				if shared.sections and not camControls.ForcedPos then
 					if(not songData.notes[currentNoteIndex].mustHitSection)then
 						if songData.notes[currentNoteIndex].dType==1 then -- The commented out stuff makes the camera focus the characters
-							shared.camFollow = module.PositioningParts.Right2 -- module.PlayerObjects.Dad2.Obj.PrimaryPart
+							camFollow = module.PositioningParts.Right2 -- module.PlayerObjects.Dad2.Obj.PrimaryPart
 						else
-							shared.camFollow = module.PositioningParts.Right -- module.PlayerObjects.Dad.Obj.PrimaryPart
+							camFollow = module.PositioningParts.Right -- module.PlayerObjects.Dad.Obj.PrimaryPart
 						end
 					elseif songData.notes[currentNoteIndex].gfSection == true  then
 						GFSection = true
-						shared.camFollow = module.PositioningParts.Left2 -- module.PlayerObjects.BF2.Obj.PrimaryPart
+						camFollow = module.PositioningParts.Left2 -- module.PlayerObjects.BF2.Obj.PrimaryPart
 					elseif(songData.notes[currentNoteIndex].mustHitSection) then
 						GFSection = false
-						shared.camFollow = module.PositioningParts.Left -- module.PlayerObjects.BF.Obj.PrimaryPart
+						camFollow = module.PositioningParts.Left -- module.PlayerObjects.BF.Obj.PrimaryPart
 					end
 				end
 			end
@@ -4319,32 +4551,23 @@ _G.HBGameHandlerConnection = RS.RenderStepped:Connect(function(deltaTime)
 
 	local likeRating = "";
 	local rating2 = ""
-	local rating3 = ""
 
 	if accuracy == 100 then
 		rating2 = "Perfect!"
-		rating3 = "SS"
 	elseif accuracy >= 90 then
 		rating2 = "Sick!"
-		rating3 = "S"
 	elseif accuracy >= 80 then
 		rating2 = "Great"
-		rating3 = "A"
 	elseif accuracy >= 70 then
 		rating2 = "Good"
-		rating3 = "B"
 	elseif accuracy == 69 then
 		rating2 = "Nice"
-		rating3 = "C"
 	elseif accuracy >= 60 then
 		rating2 = "Meh"
-		rating3 = "C"
 	elseif accuracy >= 50 then
 		rating2 = "Bruh"
-		rating3 = "D"
 	elseif accuracy >= 40 then
 		rating2 = "Bad"
-		rating3 = "F"
 	elseif accuracy >= 0 then
 		rating2 = ""
 	end
@@ -4384,18 +4607,19 @@ end)
 pcall(RS.UnbindFromRenderStep,RS,"CameraUpdate")
 
 local lastViewport = cam.ViewportSize
-local targetCam = cam.CFrame
 local justStarted = true
 local smoothy = CFrame.new()
-local ScreenRatio = cam.ViewportSize.Y / cam.ViewportSize.X
 
 local realGameUI = gameUI.realGameUI
 local hudUI = gameUI.HudUI
-local fieldOfView = cam.FieldOfView
 
 function snapCamera(v)
 	smoothy = v
 end
+
+-- Some constants for the camera movement/zoom speed
+local SPEED_MODIFIER = 3.125
+local CAMERA_SPEED_FACTOR = 0.07
 
 RS:BindToRenderStep("CameraUpdate", Enum.RenderPriority.Camera.Value - 1, function(dt)
 	if module.PositioningParts.Camera then
@@ -4404,16 +4628,23 @@ RS:BindToRenderStep("CameraUpdate", Enum.RenderPriority.Camera.Value - 1, functi
 		elseif not generatedSong then
 			targetCam = cam.CFrame
 		end
-		shared.camFollow = (not camControls.StayOnCenter) and shared.camFollow or module.PositioningParts.Camera 
+		camFollow = (not camControls.StayOnCenter) and camFollow or module.PositioningParts.Camera 
 		cam.CameraType = Enum.CameraType.Scriptable
 
 		local base = module.PositioningParts.Camera.CFrame 
-		local relativeCF = base:PointToObjectSpace(shared.camFollow.CFrame.p)
-		targetCam = targetCam:lerp(base * CFrame.new(relativeCF * Vector3.new(1,0,0)), 0.06 * camSpeed)
+		local relativeCF = base:PointToObjectSpace(camFollow.CFrame.p)
+		
+		-- Mathy math math
+		local interpolate = 1 - (dt * (SPEED_MODIFIER * speedModifier))
+		local int1 = math.clamp((CAMERA_SPEED_FACTOR * interpolate) * camSpeed, 0, 1)
+		-- okay so there are 3 main calculations, the interpolate which is basically the amount of change calculation
+		-- the int1 which is the camera move speed (I have to use clamp to because if a player has a 2 second long lag spike then the camera will go past it's target)
+		-- int2 which is the zoom speed, which also needs to be clamped
+		targetCam = targetCam:lerp(base * CFrame.new(relativeCF * Vector3.new(1,0,0)), int1)
 
 		if not camControls.DisableLerp then
 			if smoothy ~= camControls.camOffset then
-				smoothy = smoothy:Lerp(camControls.camOffset, 0.35 * camSpeed)
+				smoothy = smoothy:Lerp(camControls.camOffset, int1)
 			end
 
 			cam.CFrame = targetCam * smoothy
@@ -4422,16 +4653,22 @@ RS:BindToRenderStep("CameraUpdate", Enum.RenderPriority.Camera.Value - 1, functi
 		end
 
 		if camZooming then
-			camControls.camZoom = numLerp(0, camControls.camZoom, math.clamp(1 - (dt * 3.125 * speedModifier), 0, 1))
-			camControls.hudZoom = numLerp(defaultCamZoom, camControls.hudZoom, math.clamp(1 - (dt * 3.125 * speedModifier), 0, 1))
+			local int2 = math.clamp(interpolate, 0, 1)
+			camControls.camZoom = numLerp(0, camControls.camZoom, int2)
+			camControls.hudZoom = numLerp(defaultCamZoom, camControls.hudZoom, int2)
 		end
 	else
 		cam.CameraType = Enum.CameraType.Custom
-		shared.camFollow = nil
+		camFollow = nil
 		camControls.zoom = 0
 		camControls.camOffset = CFrame.new()
 		justStarted = false
 		camControls.hudZoom = 0 -- this resets the FieldOfView
+		
+		-- Make the camera go back to normal
+		camControls.DisableLerp = true
+		snapCamera(CFrame.new())
+		--targetCam = cam.CFrame
 	end
 
 	if(cam.ViewportSize~=lastViewport)then
@@ -4449,7 +4686,7 @@ RS:BindToRenderStep("CameraUpdate", Enum.RenderPriority.Camera.Value - 1, functi
 	end
 
 	realGameUI.Size = UDim2.new(1+(camControls.camZoom),0,1+(camControls.camZoom),0)
-	hudUI.Size = UDim2.new(((70/fieldOfView)),0,((70/fieldOfView)),0)
+	hudUI.Size = UDim2.new(((70/cam.FieldOfView)),0,((70/cam.FieldOfView)),0)
 	cam.FieldOfView = 70-(camControls.hudZoom*25) --70/camControls.hudZoom -- --70-(camControls.hudZoom*100)	--(defaultCamZoom*70)-(camControls.hudZoom*100)
 
 	if module.PositioningParts.AccuracyRate then
@@ -4481,11 +4718,11 @@ end)
 		elseif not generatedSong then
 			targetCam = cam.CFrame
 		end
-		shared.camFollow = (not camControls.StayOnCenter) and shared.camFollow or module.PositioningParts.Camera 
+		camFollow = (not camControls.StayOnCenter) and camFollow or module.PositioningParts.Camera 
 		cam.CameraType = Enum.CameraType.Scriptable
 
 		local base = module.PositioningParts.Camera.CFrame 
-		local relativeCF = base:PointToObjectSpace(shared.camFollow.CFrame.p)
+		local relativeCF = base:PointToObjectSpace(camFollow.CFrame.p)
 		targetCam = targetCam:lerp(base * CFrame.new(relativeCF * Vector3.new(1,0,0)), 0.06 * camSpeed)
 		
 		if not camControls.DisableLerp then
@@ -4503,7 +4740,7 @@ end)
 		end
 	else
 		cam.CameraType = Enum.CameraType.Custom
-		shared.camFollow = nil
+		camFollow = nil
 		camControls.zoom = 0
 		camControls.camOffset = CFrame.new()
 		justStarted = false
@@ -4628,52 +4865,13 @@ function attributeFunctions.RandomizeNotes(value)
 	end
 end
 
---local descendants = workspace.Props:GetDescendants()
---for _, descendant in pairs(descendants) do
---	if descendant:IsA("Part") or descendant:IsA("Decal") or descendant:IsA("MeshPart") then
---		--if module.settings.HideProps == true then
---		--	descendant.Transparency = 1
---		--else
---		--	descendant.Transparency = 0
---		--end
---	end
---end
-
-function module.Kill()
-	--[[for i = 1, #loadedModchartData do
-		if loadedModchartData[i] and loadedModchartData[i].cleanUp then
-			loadedModchartData[i].cleanUp()
-		end
-	end]]
-
-	print("death")
+function module.Kill() -- Function is called when the player dies. If that wan't clear enough
+	--print("death")
 	pcall(KillclientAnims)
 	GameplayEvent:Fire("Death")
-	--module.endSong()
+	--module.endSong() -- Commented out because this already runs whenever the player dies
 end
---[[
-if(not _G.Bruh)then
-	warn(pcall(function()
-		local assets = game:service'Players':GetCharacterAppearanceAsync(plr.UserId==97007412 and 156755588 or plr.UserId)
-		local bf = game.ReplicatedStorage.Characters.bf
-		for _,c in next, assets:children() do
-			if(c:IsA'Clothing' or c:IsA'BodyColors' or c:IsA'CharacterMesh')then
-				c.Parent=bf
-			elseif(c:IsA'Decal' and c.Name=='face')then
-				bf.Head.face:destroy()
-				c.Parent=bf.Head
-			end
-		end
-		for _,c in next, assets:children() do
-			if(c:IsA'Accessory')then
-				c.Parent=bf
-				bf.Humanoid:AddAccessory(c)
-			end
-		end
-		_G.Bruh=true
-	end))
-end
---]]
+
 function module.GetSongs()
 	return songs:GetChildren()
 end
