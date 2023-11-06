@@ -20,7 +20,7 @@ local ResetDisableThread = coroutine.create(function(MaxAttempts)
 		return unpack(result)
 	end
 
-
+	wait(2)
 	assert(coreCall('SetCore', 'ResetButtonCallback', false))
 	-- Copypasted from a devforum post
 end)
@@ -56,12 +56,7 @@ local InfoRetriever = RS.InfoRetriever or RS:WaitForChild("InfoRetriever")
 local GameplayStage = workspace:FindFirstChild("StageRoom")
 local plr = game:GetService("Players").LocalPlayer
 
-local spotPos = {
-	BF = CFrame.new(),
-	Dad = CFrame.new(),
-	BF2 = CFrame.new(),
-	Dad2 = CFrame.new()
-}
+local spotPos = {} -- A list that contains all the positions for the parts of a stage
 
 local Settings = {
 	SpeedModifier = 1
@@ -103,7 +98,7 @@ function getEventHandler(compRemote)
 			end
 			shared.effects={}
 			compRemote:FireServer(0x4)
-			GameHandler.endSong()
+			--GameHandler.endSong()
 		end
 	end
 end
@@ -117,8 +112,10 @@ local function OWDisplayUpdate(textDisplay)
 end 
 
 local function InitializeGame(Module, PlayerMode, plrs)
+	UI.ActualButton.Visible = false
+	UIHandler.ToggleSettingsUI(false) -- Hides the settings UI
 	GameHandler.PositioningParts.isOpponentAvailable = InfoRetriever:InvokeServer(0x0,GameHandler.PositioningParts.Spot)
-	local bf, dad, bf2, dad2 = InfoRetriever:InvokeServer(0x3,GameHandler.PositioningParts.Spot)
+	local bf, dad, bf2, dad2 = InfoRetriever:InvokeServer(0x3,GameHandler.PositioningParts.Spot) -- Returns the players on the spot
 	GameHandler.PositioningParts.isPlayer = {bf, dad, bf2, dad2}
 	--GameHandler.PositioningParts.isPlayer
 	for Name,Value in next,Module:GetAttributes() do
@@ -156,7 +153,7 @@ local function InitializeGame(Module, PlayerMode, plrs)
 	Prompt.Enabled = false
 	local PromptUI = UIHandler.ProximityPromptUI.GetUIFromPrompt(Prompt)
 	--]]
-	if game:GetService("RunService"):IsStudio() then -- then
+	if false then -- then --game:GetService("RunService"):IsStudio()
 		local updateThread = function()
 			repeat
 				OWDisplayUpdate("Loading chart...")
@@ -195,7 +192,7 @@ local function InitializeGame(Module, PlayerMode, plrs)
 		if waitTimer == 35 then
 			warn("Taking too long, enabling leave button.")
 		end
-	until instrSound.IsLoaded or waitTimer >= 35
+	until (instrSound.IsLoaded or GameHandler.LoadingStatus.DoneLoading==true) or waitTimer >= 35
 	if waitTimer >= 35 then
 		OwnerWait.Visible = false
 		GameHandler.endSong()
@@ -208,7 +205,7 @@ local function InitializeGame(Module, PlayerMode, plrs)
 		OwnerWait.Visible = false
 		return
 	end
-	extSpotSounds = extSpotSounds or compFunction:InvokeServer(0x1) -- get external spot sounds
+	extSpotSounds = compFunction:InvokeServer(0x1) -- get external spot sounds
 	--compRemote:FireServer(0x5,PlayerMode)
 	print("Got compRemote!")
 	for _,extSpotSound in next,extSpotSounds do
@@ -243,12 +240,10 @@ local function InitializeGame(Module, PlayerMode, plrs)
 		end
 	end)
 	local GpECon = GameHandler.GameplayEvent:Connect(getEventHandler(compRemote))
-	UIHandler.ToggleSettingsUI(false)
 	GameHandler.startCountdown()
 	ESECon = GameHandler.endSongEvent:Connect(function()
 		LeaveButton.Visible = false
 		compRemote:FireServer(0x2)
-		UIHandler.ToggleSettingsUI(true)
 		CRCon:Disconnect()
 		GpECon:Disconnect()
 
@@ -268,7 +263,10 @@ end)
 
 UIHandler.SongPlayEvent:Connect(function(Module, Mode, av)
 	remote:FireServer(0x6, GameHandler.settings.PlaybackSpeed)
-	remote:FireServer(0x1,(Module),PositioningParts.Spot, Settings) -- send song loading signal
+	local GameSettings = { -- Settings for the boombox
+		SpeedModifier = GameHandler.settings.PlaybackSpeed
+	}
+	remote:FireServer(0x1,(Module),PositioningParts.Spot, GameSettings) -- send song loading signal
 	for Name,_ in next,GameHandler.settings.MenuControls do
 		if Name == "QuitSpot" then continue end
 		UserInputBindables.ClearBinds(Name)
@@ -338,6 +336,9 @@ remote.OnClientEvent:Connect(function(signalType,...)
 		spotPos = {
 			BF.CFrame,
 			Dad.CFrame,
+			CamPart.CFrame,
+			ARO.CFrame,
+			GF.CFrame,
 			BF2.CFrame,
 			Dad2.CFrame
 		}
@@ -378,7 +379,7 @@ remote.OnClientEvent:Connect(function(signalType,...)
 	elseif signalType == 0x1 then -- leave
 		UserInputBindables.ClearBinds("QuitSpot")
 		LeaveButton.Visible = false
-		UIHandler.ToggleSettingsUI(true)
+		UI.ActualButton.Visible = true
 		UIHandler.ToggleUISongPickVisibility(false)
 		OwnerWait.Visible = false
 		--PositioningParts.Left = nil
@@ -399,12 +400,20 @@ remote.OnClientEvent:Connect(function(signalType,...)
 		local success, issue = pcall(function()
 			GameHandler.endSong()
 
-			local parts = {"Boyfriend", "Dad", "Boyfriend2", "Dad2"}
-			for i = 1, #parts do
-				local part = PositioningParts.Spot:FindFirstChild(parts[i])
-				part.CFrame = spotPos[i]
+			local parts = {"Boyfriend", "Dad", "CameraOrigin", "AccuracyRateOrigin", "Boyfriend2", "Dad2"}
+			if PositioningParts.Spot then
+				for i = 1, #parts do
+					local part = PositioningParts.Spot:FindFirstChild(parts[i])
+					part.CFrame = spotPos[i]
+				end
 			end
 		end)
+		if PositioningParts.Spot then
+			local oldPos = plr.Character:GetAttribute("OldPos")
+			if oldPos then
+				--plr.Character:PivotTo(oldPos)
+			end
+		end
 		if issue then
 			warn(issue)
 		end
@@ -502,18 +511,16 @@ lastSettings = plr:GetAttribute("Settings")
 
 if lastSettings then
 	local getSettings = HS:JSONDecode(lastSettings)
-	print(lastSettings)
 	for Name,Value in next, getSettings do
 		local originalValue = GameHandler.settings[Name]
 		if originalValue ~= nil and type(originalValue) ~= "table" and type(originalValue) == type(Value) then
 			GameHandler.settings[Name] = Value
-			print(("Set %s with %s!"):format(Name,tostring(Value)))
+			--print(("Set %s with %s!"):format(Name,tostring(Value)))
 		elseif type(originalValue) == "boolean" and type(Value) == "string" then
 			GameHandler.settings[Name] = toboolean(Value)
-			print(("Set %s with %s!"):format(Name,tostring(Value)))
+			--print(("Set %s with %s!"):format(Name,tostring(Value)))
 		elseif type(originalValue) == "table" then
 			if Name == "Keybinds" then
-
 				for Mania,DirectionKeybinds in next,Value do
 					for Direction,Keycodes in next,DirectionKeybinds do
 						--[=
@@ -531,7 +538,7 @@ if lastSettings then
 			elseif Name == "SongData" then
 				for songName,Difficulty in next,Value do
 					GameHandler.settings.SongData[songName] = Difficulty
-					print("Added Song Data")
+					--print("Added Song Data")
 				end
 			end
 		elseif originalValue == nil then
