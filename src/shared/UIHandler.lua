@@ -263,7 +263,8 @@ local SongObjects = {}
 local ModPick = ScreenGui.SongPickUI.ModPick
 local SongPick = ScreenGui.SongPickUI.SongPick
 local SongActions = ScreenGui.SongPickUI.SongPick.SongActions
-local SongActions2 = ScreenGui.SongPickUI.SongPick.SongActions2
+local ModBackgrounds = ScreenGui.SongPickUI.ModBackgrounds
+--local SongActions2 = ScreenGui.SongPickUI.SongPick.SongActions2
 local DescPart = ScreenGui.SongPickUI.ModPick.BottomPart
 local Disk = ScreenGui.SongPickUI.Disk
 local Score = ScreenGui.SongPickUI.ModPick.Score
@@ -423,11 +424,40 @@ function UIHandler.MoveToMod(ModName,silent) -- mod change
 	if not silent then ScreenGui.UI.Accept:Play() end
 	local SongInfoTable = SongInfo[ModName]
 	CreditsText.Text = SongInfoTable and SongInfoTable.Description or "[ MISSING CREDITS ]"
-	SPBack.Image = SongInfoTable.BGImage or "rbxassetid://7456453307"
-	MPBack.Image = SongInfoTable.BGImage or "rbxassetid://7456453307"
+	
+	-- BACKGROUNDS --
+	
+	local ImageColor = Color3.new(0.156863, 0.156863, 0.156863)
+	local BackgroundColor = Color3.new(0.105882, 0.105882, 0.105882)
+	
+	local function applyBackground(bg)
+		if bg then
+			local image = bg:FindFirstChild("Image")
+			if image then
+				SPBack.Image = image.Value
+				MPBack.Image = image.Value
+			end
+			if bg:FindFirstChild("Color") then ImageColor = bg.Color.Value end
+			if bg:FindFirstChild("Color2") then ImageColor = bg.Color2.Value end
+			if bg:FindFirstChild("Pixelated") then SPBack.ResampleMode = bg.Pixelated.Value and Enum.ResamplerMode.Pixelated or Enum.ResamplerMode.Default end
+		else
+			warn(("%s Isn't A Valid Background"):format(bg.Name))
+		end
+	end
+	
+	if SongInfoTable and SongInfoTable.BGType then
+		applyBackground(ModBackgrounds:FindFirstChild(SongInfoTable.BGType))
+	else
+		applyBackground(ModBackgrounds:FindFirstChild("Default")) -- Apply Default Background
+	end
+	if SongInfoTable and SongInfoTable.BGImage then
+		SPBack.Image = SongInfoTable.BGImage
+		MPBack.Image = SongInfoTable.BGImage
+	end
+	
 	TwS:Create(SPBack,twAnimInfo,{
-		ImageColor3 = SongInfoTable and (SongInfoTable.BGColor or SongInfoTable.OBJPR_TextColor3) or Color3.new(0.156863, 0.156863, 0.156863),
-		BackgroundColor3 = SongInfoTable and (SongInfoTable.BGColor and (SongInfoTable.BGColor2) or SongInfoTable.OBJPR_TextStrokeColor3) or Color3.new(0.105882, 0.105882, 0.105882)
+		ImageColor3 = SongInfoTable and (SongInfoTable.BGColor) or ImageColor,
+		BackgroundColor3 = SongInfoTable and (SongInfoTable.BGColor and (SongInfoTable.BGColor2)) or BackgroundColor
 	}):Play()
 	--SPBack.ImageColor3 = SongInfoTable and (SongInfoTable.BGColor or SongInfoTable.OBJPR_TextColor3) or Color3.new(0.156863, 0.156863, 0.156863)
 	-- Song list update
@@ -549,8 +579,6 @@ function UIHandler.SelectSong(identifier:string|number,silent) -- only works for
 		end
 		local thread = coroutine.create(tweenFunc)
 		coroutine.resume(thread)--]]
-
-
 	end
 	if silent then
 		SongSelect.SongButton.Position = UDim2.new(0.25,0,0.5,0)
@@ -588,7 +616,7 @@ function UIHandler.SelectSong(identifier:string|number,silent) -- only works for
 	end
 
 	UIHandler.ChangeDiff(UIHandler.SPUI_States.DifficultyNum)
-	UIHandler.PlayerMode(UIHandler.SPUI_States.PlayerOptionNum)
+	--UIHandler.PlayerMode(UIHandler.SPUI_States.PlayerOptionNum)
 	if not silent then ScreenGui.UI.Accept:Play() end
 end
 
@@ -625,8 +653,12 @@ function UIHandler.ChangeDiff(x)-- x can be either a number or a string.
 	else
 		SongActions.Easier.Visible = false
 	end
-
-	local songData = HS:JSONDecode(require(UIHandler.SPUI_States.SelectedSong.DiffModules[name]))
+	
+	local songData
+	local success, err = pcall(function()
+		songData = HS:JSONDecode(require(UIHandler.SPUI_States.SelectedSong.DiffModules[name]))
+	end)
+	if not success then warn("JSON is not valid -> " .. err) return end
 	UIHandler.SPUI_States.SongName = songData.song.song
 	DiskIcon.Animations = {} -- reset the animations
 	DiskIcon.CurrAnimation = nil
@@ -665,6 +697,7 @@ function UIHandler.ChangeDiff(x)-- x can be either a number or a string.
 	DiskIcon:ResetAnimation()
 end
 
+--[[ -- DEPRECATED
 function UIHandler.PlayerMode(x)
 	if type(x) == "number" then
 		-- Check if the number is within the bounds of the available difficulties.
@@ -683,6 +716,7 @@ function UIHandler.PlayerMode(x)
 	end
 	UIHandler.SPUI_States.PlayerOptionNum = x
 	local name = UIHandler.SPUI_States.PlayerOptions[UIHandler.SPUI_States.PlayerOptionNum]
+	
 	SongActions2.DiffText.Text = name -- text
 	SongActions2.DiffText.TextStrokeColor3 = PlayerOptionColor[name] or Color3.new(1, 1, 1)
 	SongActions2.Start.TextTransparency = PlayerOptionList[UIHandler.SPUI_States.PlayerOptionNum] == UIHandler.SPUI_States.SelectedMode and 1 or 0
@@ -710,8 +744,9 @@ function UIHandler.PlayerMode(x)
 			UIHandler.SPUI_States.Locked2 = false
 		end
 	end
-	--SongActions2.DiffText.Font = PlayerOptionList[name] or Enum.Font.Arial
+	SongActions2.DiffText.Font = PlayerOptionList[name] or Enum.Font.Arial
 end
+--]]
 
 UIHandler.MoveToMod(NamesInOrder[1],true)
 
@@ -786,7 +821,7 @@ function UIHandler.ToggleUISongPickVisibility(state:bool)
 			ModPick.Visible = false
 			SongPick.Visible = false
 			SongActions.Visible = false
-			SongActions2.Visible = false
+			--SongActions2.Visible = false
 			Disk.Visible = false
 			Score.Visible = false
 			for i,v in next,funnyTweens do 
@@ -865,15 +900,6 @@ function UIHandler.ToggleUISongPickVisibility(state:bool)
 end
 
 -- Song Actions stuff
-SongActions2.Start.MouseButton1Click:Connect(function()
-	if not UIHandler.SPUI_States.Locked2 then
-		UIHandler.SPUI_States.SelectedMode = UIHandler.SPUI_States.PlayerOptions[UIHandler.SPUI_States.PlayerOptionNum]
-		SongActions2.Start.TextTransparency = PlayerOptionList[UIHandler.SPUI_States.PlayerOptionNum] == UIHandler.SPUI_States.SelectedMode and 1 or 0
-		SMEvent:Fire(UIHandler.SPUI_States.PlayerOptions[UIHandler.SPUI_States.PlayerOptionNum],UIHandler.SPUI_States.AvailablePlayers)
-	else
-		ScreenGui.Song.Cancel:Play()
-	end
-end)
 SongActions.Start.MouseButton1Click:Connect(function()
 	--[[
 	local songSettings = {
@@ -901,20 +927,9 @@ local HarderSprite = Sprite.new(SongActions.Harder,false,1,false)
 HarderSprite:AddSparrowXML(RepS.Modules.Assets["MFMUI.xml"],"Idle","arrow right0",24,false)
 HarderSprite:AddSparrowXML(RepS.Modules.Assets["MFMUI.xml"],"Press","arrow push right0",24,false)
 HarderSprite:PlayAnimation("Idle")
-local EasierSprite2 = Sprite.new(SongActions2.Easier,false,1,false)
-EasierSprite2:AddSparrowXML(RepS.Modules.Assets["MFMUI.xml"],"Idle","arrow left0",24,false)
-EasierSprite2:AddSparrowXML(RepS.Modules.Assets["MFMUI.xml"],"Press","arrow push left0",24,false)
-EasierSprite2:PlayAnimation("Idle")
-local HarderSprite2 = Sprite.new(SongActions2.Harder,false,1,false)
-HarderSprite2:AddSparrowXML(RepS.Modules.Assets["MFMUI.xml"],"Idle","arrow right0",24,false)
-HarderSprite2:AddSparrowXML(RepS.Modules.Assets["MFMUI.xml"],"Press","arrow push right0",24,false)
-HarderSprite2:PlayAnimation("Idle")
 
 SongActions.Easier.MouseButton1Down:Connect(function()
 	EasierSprite:PlayAnimation("Press")
-end)
-SongActions2.Easier.MouseButton1Down:Connect(function()
-	EasierSprite2:PlayAnimation("Press")
 end)
 SongActions.Easier.MouseButton1Up:Connect(function()
 	if UIHandler.SPUI_States.DifficultyNum == 1 then
@@ -924,6 +939,29 @@ SongActions.Easier.MouseButton1Up:Connect(function()
 	end
 	EasierSprite:PlayAnimation("Idle")
 end)
+--[[ -- Deprecated
+SongActions2.Start.MouseButton1Click:Connect(function()
+	if not UIHandler.SPUI_States.Locked2 then
+		UIHandler.SPUI_States.SelectedMode = UIHandler.SPUI_States.PlayerOptions[UIHandler.SPUI_States.PlayerOptionNum]
+		SongActions2.Start.TextTransparency = PlayerOptionList[UIHandler.SPUI_States.PlayerOptionNum] == UIHandler.SPUI_States.SelectedMode and 1 or 0
+		SMEvent:Fire(UIHandler.SPUI_States.PlayerOptions[UIHandler.SPUI_States.PlayerOptionNum],UIHandler.SPUI_States.AvailablePlayers)
+	else
+		ScreenGui.Song.Cancel:Play()
+	end
+end)
+
+local EasierSprite2 = Sprite.new(SongActions2.Easier,false,1,false)
+EasierSprite2:AddSparrowXML(RepS.Modules.Assets["MFMUI.xml"],"Idle","arrow left0",24,false)
+EasierSprite2:AddSparrowXML(RepS.Modules.Assets["MFMUI.xml"],"Press","arrow push left0",24,false)
+EasierSprite2:PlayAnimation("Idle")
+local HarderSprite2 = Sprite.new(SongActions2.Harder,false,1,false)
+HarderSprite2:AddSparrowXML(RepS.Modules.Assets["MFMUI.xml"],"Idle","arrow right0",24,false)
+HarderSprite2:AddSparrowXML(RepS.Modules.Assets["MFMUI.xml"],"Press","arrow push right0",24,false)
+HarderSprite2:PlayAnimation("Idle")
+
+SongActions2.Easier.MouseButton1Down:Connect(function()
+	EasierSprite2:PlayAnimation("Press")
+end)
 SongActions2.Easier.MouseButton1Up:Connect(function()
 	if UIHandler.SPUI_States.PlayerOptionNum == 1 then
 		UIHandler.PlayerMode(#UIHandler.SPUI_States.PlayerOptions)
@@ -932,22 +970,8 @@ SongActions2.Easier.MouseButton1Up:Connect(function()
 	end
 	EasierSprite2:PlayAnimation("Idle")
 end)
-
-SongActions.Harder.MouseButton1Down:Connect(function()
-	HarderSprite:PlayAnimation("Press")
-end)
 SongActions2.Harder.MouseButton1Down:Connect(function()
 	HarderSprite2:PlayAnimation("Press")
-end)
-SongActions.Harder.MouseButton1Up:Connect(function()
-	if UIHandler.SPUI_States.DifficultyNum == #UIHandler.SPUI_States.AvailableDiffs then
-		--UIHandler.SPUI_States.DifficultyNum = 1
-		UIHandler.ChangeDiff(1)
-	else
-		UIHandler.ChangeDiff(UIHandler.SPUI_States.DifficultyNum + 1)
-	end
-	HarderSprite:PlayAnimation("Idle")
-	--UIHandler.UpdateDifficultyUI()
 end)
 SongActions2.Harder.MouseButton1Up:Connect(function()
 	if UIHandler.SPUI_States.PlayerOptionNum == #UIHandler.SPUI_States.PlayerOptions then
@@ -957,6 +981,21 @@ SongActions2.Harder.MouseButton1Up:Connect(function()
 		UIHandler.PlayerMode(UIHandler.SPUI_States.PlayerOptionNum + 1)
 	end
 	HarderSprite2:PlayAnimation("Idle")
+	--UIHandler.UpdateDifficultyUI()
+end)
+]]
+SongActions.Harder.MouseButton1Down:Connect(function()
+	HarderSprite:PlayAnimation("Press")
+end)
+
+SongActions.Harder.MouseButton1Up:Connect(function()
+	if UIHandler.SPUI_States.DifficultyNum == #UIHandler.SPUI_States.AvailableDiffs then
+		--UIHandler.SPUI_States.DifficultyNum = 1
+		UIHandler.ChangeDiff(1)
+	else
+		UIHandler.ChangeDiff(UIHandler.SPUI_States.DifficultyNum + 1)
+	end
+	HarderSprite:PlayAnimation("Idle")
 	--UIHandler.UpdateDifficultyUI()
 end)
 -- Mod Navigation buttons
@@ -1190,10 +1229,6 @@ infoText.Parent = infoTab.Frame]]
 
 local settingObjs = {}
 
-function UIHandler.ToggleSettingsUI(bool)
-
-end
-
 function cloneTable(target,deep)
 	local newTable = table.create(#target)
 	for index,value in next,target do 
@@ -1245,7 +1280,7 @@ settingButton.Activated:Connect(function()
 	end
 end)
 
-local function getNearestVal(gettable,val,direction:bool?)
+local function getNearestVal(gettable,val,direction:boolean?)
 	local highestIndex = 0
 	for i,v in next,gettable do
 		if val < v then
@@ -1345,22 +1380,25 @@ local NoteXmls = {
 	RepS.Modules.Assets["Note9K.xml"];
 }-- this is dumb
 
+-- This will also get the NoteSplash Objects
 local function getNoteskinObjects(mania,name) -- If the noteskin is not valid, it will return the original noteskin instead.
 	local m = {4,6,8,5,7,8}
 	local maniaFolder = RepS.Modules.Assets:FindFirstChild("noteSkins" .. m[mania] .. "K")
 	if maniaFolder == nil then return end
 	local Img = maniaFolder:FindFirstChild(name) or maniaFolder.Original
+	local Img2 = maniaFolder:FindFirstChild("noteSplashes" .. tostring(name)) or maniaFolder:FindFirstChild("noteSplashes")
+	local xml2 = Img2 and Img2:FindFirstChild("XML") or nil
 	local xml = Img:FindFirstChild("XML") or Img:FindFirstChild("XMLRef") or NoteXmls[mania]
 	if xml:IsA("ObjectValue") then
 		xml = xml.Value
 	end
-	return Img,xml
+	return Img,xml,Img2,xml2
 end
 
 local maniaUITable = {}
 
 function UIHandler.SetGameBind(maniaVal,DirectionVal,index,keyCode)
-	print(maniaVal,DirectionVal,index,keyCode)
+	--print(maniaVal,DirectionVal,index,keyCode)
 	gameSettings.settings.Keybinds[maniaVal][DirectionVal][index] = ((typeof(keyCode) == "EnumItem" and keyCode.EnumType == Enum.KeyCode) or keyCode == nil) and keyCode or nil
 	maniaUITable[maniaVal][DirectionVal][index].Text = keyCode and keyCode.Name or unbindedText
 end
@@ -1370,13 +1408,14 @@ function UIHandler.InitializeSettings()
 	hasInitialized = true
 	-- insert the unlisted rulers to the __ORDER list.
 	for Name,SettingRule in next,gameSettings.settingsRules do
-		if table.find(gameSettings.settingsRules.__ORDER,Name) then continue end
+		if table.find(gameSettings.settingsRules.__ORDER,Name) or Name == "__ORDER" then continue end
 		warn(("%s is not listed in __ORDER table"):format(Name))
 		gameSettings.settingsRules.__ORDER[#gameSettings.settingsRules.__ORDER+1] = Name
 	end
 	-- Process the order list
 
 	for Index,Name in next,gameSettings.settingsRules.__ORDER do
+		if Name == "__ORDER" then continue end
 		local settingRule = gameSettings.settingsRules[Name]
 		if not settingRule then warn(("%s isn't found, skipping"):format(Name));continue end
 		local valueType = settingRule.Type
@@ -1407,6 +1446,12 @@ function UIHandler.InitializeSettings()
 				end
 				if type(newValue) ~= "number" then -- If no value given, use the same value and just update the UI.
 					newValue = gameSettings.settings[Name]
+				end
+				if newValue < settingRule.Min then
+					newValue = settingRule.Min
+				end
+				if newValue > settingRule.Max then
+					newValue = settingRule.Max
 				end
 				gameSettings.settings[Name] = newValue
 				valChangeEvent:Fire(newValue)
@@ -1464,6 +1509,10 @@ function UIHandler.InitializeSettings()
 				if enterPress and newValue then
 					updateValue(newValue)
 				else
+					local defaultFallback = gameSettings.defaultSettings[Name]
+					if defaultFallback then
+						updateValue(defaultFallback)
+					end
 					settingInputObject.Input.Value.Text = cropDecimals(gameSettings.settings[Name],2) .. settingRule.Measure
 				end
 			end)
@@ -1570,6 +1619,11 @@ function UIHandler.InitializeSettings()
 					local itemIsValid = not not table.find(contents,newValue)
 					if itemIsValid then
 						item = newValue
+					else
+						local defaultFallback = table.find(contents, "default")
+						if defaultFallback then
+							item = contents[defaultFallback]
+						end
 					end
 				end
 				if not item then error(("Item is invalid! (got %s)"):format(tostring(item))) end
@@ -1753,6 +1807,17 @@ function UIHandler.InitializeSettings()
 		"violet0";
 		"black0";
 		"dark0";
+	}
+	local splashSprites = {
+		'purple ';
+		'blue ';
+		'green ';
+		'red ';
+		'white ';
+		'yellow ';
+		'violet ';
+		'black ';
+		'dark ';
 	}
 	local maniaStuff = {
 		{1,2,3,4}; -- 1
@@ -2026,7 +2091,6 @@ function UIHandler.InitializeSettings()
 		bindText.Parent = extrabindsFrame
 	end
 	extrabindsFrame.CanvasSize = UDim2.new(1,0,0,50*#extraBindsOrder)
-	local menuOrder = {1,4,2,5,6,3}
 
 	-- keybinds mania button thing
 	local maniaButtons = {}
@@ -2066,7 +2130,7 @@ function UIHandler.InitializeSettings()
 		end--]]
 	end)
 
-
+	local menuOrder = {1,4,2,5,6,3}
 	-- create the buttons
 	for Index,ManiaUI in next,maniaContents do
 		local thebutton = script.SettingsElements.Button:Clone()
@@ -2167,26 +2231,31 @@ function UIHandler.InitializeSettings()
 
 	local receptorSprites = {}
 	local noteSprites = {}
+	local noteSplashSprites = {}
 	local function showArrows(mania,noteskinName)
 		if not tabOpen then return end
 		local spriteOrder = maniaStuff[mania]
 		--if mania == "stop" or not spriteOrder then return end
 		-- clean any existing sprites
-		local demoSkin,demoXML
+		local demoSkin,demoXML,demoSplashSkin,demoSplashXML
 		for _,v in next,receptorSprites do
 			if v then v:Destroy() end
 		end
 		for _,v in next,noteSprites do
 			if v then v:Destroy() end
 		end
+		for _,v in next,noteSplashSprites do
+			if v then v:Destroy() end
+		end
 		if mania == "stop" then
-			receptorSprites,noteSprites = nil,nil
+			receptorSprites,noteSprites,noteSplashSprites = nil,nil,nil
 			return
 		else
-			demoSkin,demoXML = getNoteskinObjects(mania,noteskinName)
-		end 
+			demoSkin,demoXML,demoSplashSkin,demoSplashXML = getNoteskinObjects(mania,noteskinName)
+		end
 		receptorSprites = {}
 		noteSprites = {}
+		noteSplashSprites = {}
 		-- generate new receptors and note sprites
 		local scale = thePreview.AbsoluteSize.X/shared.noteScaleRatio.X
 		for i,v in next,maniaRepStuff[mania] do
@@ -2204,19 +2273,41 @@ function UIHandler.InitializeSettings()
 			noteSprite.Scale = Vector2.new(scale,scale) * 0.5
 			noteSprites[i] = noteSprite
 			repSpr:PlayAnimation("idle")
+			
+			if demoSplashSkin then
+				local noteSkinSprite = Sprite.new(demoSplashSkin:Clone(), true, demoSplashSkin:GetAttribute("scale") or 1.85, false)
+				noteSkinSprite:AddSparrowXML(demoSplashXML,"display","note splash " .. splashSprites[maniaStuff[mania][i]] .. "1", 24, true)
+				noteSkinSprite.Scale = Vector2.new(scale,scale) * 0.5
+				noteSkinSprite.Visible = false
+				noteSplashSprites[i] = noteSkinSprite
+			end
 		end
 		-- display
 		for i,repSpr in next,receptorSprites do
 			repSpr.GUI.Parent = thePreview
 			repSpr.GUI.Position = UDim2.fromScale((1/(#receptorSprites+1)) * i,0.1)
+			if noteSplashSprites[i] then
+				noteSplashSprites[i].GUI.Parent = thePreview
+				noteSplashSprites[i].GUI.Position = UDim2.fromScale((1/(#receptorSprites+1)) * i,0.1)
+			end
+			
 			spawn(function()
 				wait(.25*i)
 				local setRS = receptorSprites
 				local c = 0
 				repeat
+					if not repSpr then return end
 					if c > 2 then c = 0 end
 					if c == 0 then
+						if not repSpr then return end
 						repSpr:PlayAnimation("confirm")
+						if noteSplashSprites[i] then
+							noteSplashSprites[i].Visible = true
+							noteSplashSprites[i]:PlayAnimation("display", true)
+							delay(.11, function()
+								noteSplashSprites[i].Visible = false
+							end)
+						end
 					elseif c == 1 then
 						repSpr:PlayAnimation("press")
 					elseif c == 2 then
@@ -2224,7 +2315,7 @@ function UIHandler.InitializeSettings()
 					end
 					c += 1
 					wait(1.2)
-				until receptorSprites ~= setR
+				until receptorSprites ~= setRS
 			end)
 		end
 		for i,noteSpr in next,noteSprites do
@@ -2232,7 +2323,6 @@ function UIHandler.InitializeSettings()
 			noteSpr.GUI.Position = UDim2.fromScale((1/(#receptorSprites+1)) * i,0.25)
 			noteSpr:PlayAnimation("display")
 		end
-
 	end
 
 	-- the character
@@ -2251,7 +2341,14 @@ function UIHandler.InitializeSettings()
 		if currChar then currChar:Destroy();thePreview.Character:ClearAllChildren() end
 		local characterName = animation:GetAttribute("CharacterName")
 		local characterModel = (characterName and RepS.Characters:FindFirstChild(characterName) or RepS.Characters.opponent):Clone()
-		local animator = characterModel:FindFirstChild("Animator",true)
+		local animator = characterModel:FindFirstChild("Animator",false)
+		if not animator then
+			-- Make a new animator
+			local ani = Instance.new("Animator")
+			ani.Parent = characterModel.Humanoid
+			animator = ani
+		end
+		
 		characterModel:SetPrimaryPartCFrame(CFrame.new())
 		thePreview.Character.PrimaryPart = characterModel.PrimaryPart
 		for _,v in next,characterModel:GetChildren() do
@@ -2260,7 +2357,15 @@ function UIHandler.InitializeSettings()
 
 		local currentAnimations = {}
 		for _,v in next,animation:GetChildren() do
-			if v:IsA("Animation") then currentAnimations[v.Name] = animator:LoadAnimation(v) end
+			if v:IsA("Animation") and animator then
+				if v.AnimationId~="" then
+					currentAnimations[v.Name] = animator:LoadAnimation(v)
+				else
+					warn("Not valid Asset Id for Animation")
+				end
+			else
+				warn("Animator not found")
+			end
 		end
 		currChar = characterModel
 		local c = 0
@@ -2441,6 +2546,12 @@ else
 		fireSaveSettings()
 		--InfoRetriever:InvokeServer(0x2,gameSettings.settings)
 	end)
+end
+
+function UIHandler.ToggleSettingsUI(bool)
+	open = bool
+	funnySettings.Parent = bool and ScreenGui or nil
+	fireSaveSettings()
 end
 
 return UIHandler
