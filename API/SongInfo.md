@@ -16,7 +16,7 @@ You can also change the font, transparency, text size, text stroke color, text c
 <summary>How to use it</summary>
 You will find this module inside of ReplicatedStorage>Modules>SongInfo. 
 
-The first thing you could change is "Mod Order" this arranges all the mods in a specific order. However, this is not required and auto sorts.
+The first thing you could change is "Mod Order"[^1]. However, this is not required and auto sorts.
 
 Next each mod listed will have a specifc format that it follows, and it should look like this:
 ![image_2023-08-22_160237343](https://github.com/Piper0007/YAFN-Banana-Edition/assets/110263550/fb6ac533-ed8e-46f1-962e-0e7d569c6760)
@@ -41,4 +41,6 @@ If you want to make your custom Background Images you need to make an image that
 
 I added more functionality for the backgrounds stuff and added a customizations folder that you can find in (StarterGui -> GameUI -> SongPickUI -> ModBackgrounds)
 And you can access them in songInfo by adding something called "BGType" and set to the name of the background.
+
+[^1]: "Mod Order" is a list at the top of SongInfo that specifies how all the mods will be ordered (from top to bottom)
 </details>
