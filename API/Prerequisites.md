@@ -8,7 +8,7 @@ When making an animation for the right side of a stage it must be turned 180 deg
 If you want to add songs to the game then there are a couple of places that you need to go in Roblox Studio.
 ### Adding the Chart
 First off, adding the chart to the game requires you to add a New Folder named after the class or “Mod” that the songs falls under (this folder is placed in ReplicatedStorage -> Modules -> Songs). Under the folder you need to add another New Folder named after the specific song (the name of the song must stay constant wherever it is referenced). Inside of the folder you will need to make a new Module Script instance and name it after whatever difficulty you choose (most commonly used “Easy”, “Normal”, and “Hard”). Next, inside of the Module Script you need to write “[==[ ]==]” and in between the space you paste the chart for the song (supported chart types are “Psych Engine” and “Kade Engine”). Finally, inside the chart data you need to find the line that says ‘ “song”: ‘ (the shortcut to find text is Ctrl + F) and the song will be set to a value which will be the name of the song, I suggest changing it to the same name you used to name the folder for the song.
-Adding the Song (+metadata)
+### Adding the Song (+metadata)
 The script that handles applying properties to the songs is a Module Script named SongIDs and is located in ReplicatedStorage. Inside the script each song is given a table that includes all of the info/metadata the song will use. Additionally the script follows this format:
 ```lua
 return {
