@@ -14,5 +14,4 @@ Links the API's:
 - [ ] GameHandler.lua
 - [ ] UIHandler.lua
 - [ ] Game.lua
-- [ ] SongIdInfo
 - [ ] Custom Notes and Note Splashes
