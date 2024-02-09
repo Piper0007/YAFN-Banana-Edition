@@ -6,17 +6,29 @@ Because Roblox is just amazing, most of or even all the sounds in the game may n
 When making an animation for the right side of a stage it must be turned 180 degrees (by rotating the torso on the Y axis). Once the animation(s) are made they need to be put inside a New Folder located under (ReplicatedStorage -> Animations -> CharacterAnims) and named after what the animation will be called as. Under the folder, there needs to be Animation instances created named “Idle, SingLeft, SingRight, SingUp, SingDown” and change the property “AnimationId” to whatever id is for the animation(s) that were created. As a heads up, if the animation is for a character on the left side the animations “SingLeft” and “SingRight” are swapped.
 
 Now, for adding models or rigs or just R15 characters you need to go to (ReplicatedStorage -> Characters) inside of it you will put the model inside and name it whatever. Lastly, on the folder named after the animation there needs to be a attribute added with the type "string", name "CharacterName", and the value should be the name of the model inside of the Characters folder that you want. If you made an R15 animation then the there should be another attribute added with the name "R15", type "boolean", and make sure the checkbox is checked. Also, the model needs to be R15 as well.
+### Adding Animations to a Song
+To add a specific animation to a song you need to go to (ReplicatedStorage -> SongIDs) and in there go to the song that you want and add this code to it:
+```lua
+BFAnimations = " Name Of Animation ",
+DadAnimations = " Name Of Animation ",
+
+-- Optional
+
+BF2Animations = " Name Of Animation ", -- this is for when you want a second character standing next to the first BF
+Dad2Animations = " Name Of Animation ", -- Same thing just on the other side of the stage
+```
+More info on [SongIDs](SongIDs.md)
 ## Adding/Modifying Songs
 If you want to add songs to the game then there are a couple of places that you need to go in Roblox Studio.
 ### Adding the Chart
-First off, to add the chart to the game, you create a New Folder and name it after the class or “Mod” that the songs falls under; the folder is then placed in (ReplicatedStorage -> Modules -> Songs). Within the folder you need to add a New Folder named after the specific song (the name of the song must stay the same wherever it is referenced). Inside of the folder you will need to make a new Module Script instance and name it after whatever difficulty you choose (e.g. “Easy”, “Normal”, and “Hard”). Next, inside of the Module Script you need to write “return [==[   ]==]” and in between the space you paste the chart for the song (supported chart types are “Psych Engine” and “Kade Engine”). Finally, inside the chart data you need to find the line that says ‘ “song”: ‘ (the shortcut to find text is Ctrl + F) and the song will be set to a value which will be the name of the song, I suggest changing it to the same name for the song.
+First off, to add the chart to the game, you create a New Folder and name it after the class or “Mod” that the songs falls under; the folder is then placed in (ReplicatedStorage -> Modules -> Songs). Within the folder you need to add a New Folder named after the specific song (the name of the song must stay the same wherever it is referenced). Inside of the folder you will need to make a new Module Script instance and name it after whatever difficulty you choose (e.g. "Easy", "Normal", and "Hard"). Next, inside of the Module Script you need to write "return [==[   ]==]" and in between the space you paste the chart for the song (supported chart types are "Psych Engine" and "Kade Engine"). Finally, inside the chart data you need to find the line that says ‘ “song”: ‘ (the shortcut to find text is Ctrl + F) and the song will be set to a value which will be the name of the song, I suggest changing it to the same name for the song.
 #### Adding Custom Difficulties
 To add custom difficulties you need to go (StarterGui -> GameUI -> UIHandler) and around the top of the script you need to find where it says this:
 ```lua
 local DifficultyList = {
-	“Easy”,
-	“Normal”,
-	“Hard”,
+	"Easy",
+	"Normal",
+	"Hard",
 	-- Add whatever difficulty name you want in this list
 };
 
@@ -25,7 +37,7 @@ local DifficultyColor = {
 	Easy = Color3.new(0, 1, 0); -- This color is green
 	Normal = Color3.new(1, 1, 0); -- This color is orange
 	Hard = Color3.new(1, 0, 0); -- This color is red
-	-- If you have a difficulty with a special name you would use “ [‘Diff Name’] “ instead
+	-- If you have a difficulty with a special name you would use " ['Diff Name'] " instead
 };
 
 -- defines the text color of the difficulty
@@ -47,15 +59,15 @@ The script that handles applying properties to the songs is a Module Script name
 ```lua
 return {
 	[ [song name goes here] ] = {
-		Instrumental = [ insert number of the id ], -- Do not forget to add a semicolon or a comma at the end of each line (within the list) this is just basic coding stuff but some people need to be explained this
-		Voices = [ insert number of the id ],
+		Instrumental = [insert number of the id], -- Do not forget to add a semicolon or a comma at the end of each line (within the list) this is just basic coding stuff but some people need to be explained this
+		Voices = [insert number of the id],
 	} -- also at the end of each curly bracket must be a comma as well because it is within a list as well
 }
 ```
 Here’s a working example just in case the formatting was a bit confusing
 ```lua
 return {
-	[“Tutorial”] = {
+	["Tutorial"] = {
 		Instrumental = 12578295484,
 		Voices = 12578299885
 	},
@@ -76,11 +88,11 @@ Now I will mention that a lot of xml files are different from one another and a 
 To assign them you need to go to (ReplicatedStorage -> SongIDs) and within that script you go to the part of the list for the song you want and add this:
 ```lua
 return {
-	[‘Tutorial’] = {
+	['Tutorial'] = {
 		Instrumental = 12578295484,
 		Voices = 12578299885,
-		NoteSkin = “Default”,
-		NoteSplashSkin = “noteSplashes”
+		NoteSkin = "Default",
+		NoteSplashSkin = "noteSplashes"
 	}
 }
 ```
@@ -89,3 +101,37 @@ If you want to add a certain note skin into settings you go to (ReplicatedStorag
 
 ![Image](https://github.com/Piper0007/YAFN-Banana-Edition/assets/110263550/ca686df9-b3eb-4c18-86fd-e15502f1cfa9)
 And inside of the list you will add or remove whatever note skins you like.
+
+Adding Normal, Dead, and Winning Icons
+You first need to go to (ReplicatedStorage -> Modules -> Icons) and inside of the script you will find a list of icons that list as such:
+```lua
+return {
+	['BF'] = {
+		NormalId = "", -- This should be the image id of either the entire icon set or just the one icon
+		NormalDimensions = Vector2.new(150, 150); -- The standard size of a icon is 150x150 pixels
+		DeadId = "",
+		OffsetDead = Vector2.new(150, 0); -- the offset of the dead image (use only when the icons are in a set)
+		DeadDimensions = Vector2.new(150, 150);
+
+		-- Winning icons are rare but you may need them
+		WinningId = "",
+		OffsetWinning = Vector2.new(300, 0);
+		WinningDimensions = Vector2.new(150, 150);
+
+		-- For changing the color of the healthbar (its optional though)
+		IconColor = Color3.new();
+
+		-- If you have a pixelated icon and the image size is really small you might want to enable this
+		IsPixelated = true;
+	},
+}
+
+```
+Once you have your icon, you apply it to a song by going to the chart and setting the value for player1 (left side) to the name of the icon or player2 (right side) to it instead.
+For example:
+```json
+{
+	"player1": "Dad",
+	"player2": "BF"
+}
+```
