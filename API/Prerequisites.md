@@ -53,6 +53,17 @@ local DifficultyFont = {
 }
 ```
 Once you have added the difficulty then you would be able to set any song to the difficulty.
+#### Locking Songs
+To make a song “Locked” means that you are preventing anybody (including the owner of the game) from playing the song, while still being able to view it in the list of songs. To do this you need to go to your specific song’s folder found under (ReplicatedStorage > Songs) and then click on the song’s folder, for example, “Tutorial”. Once you have clicked on the folder you should scroll down in the properties view tab to the bottom where it says add attribute; that is where you add an attribute with the type “boolean” and name it “Locked”. Finally you can check and uncheck the checkbox to make the song locked and unlocked.
+#### Adding Warning to Songs
+Adding warnings to songs requires you to going to the song you want in (ReplicatedStorage > Songs) and for the specific song, you click on the folder and add a boolean attribute named either “JP”, “UN”, “LC”, “FL”, “NS”, “CP”. Now each of these names will display their own warning (so you can have more than one warning per song):
+JP: “This song contains jumpscares”
+UN: “This song is unfinished or unoptimized”
+LC: “This song contains a lack of mobile/console support”
+FL: “This song contains flashing lights”
+NS: “This song contains no sound”
+CP: “This song is copyrighted”
+If you would like to change how the warnings are displayed or add new warnings, or even change the system entirely (this was made by the original YAFN team, not by me) you can find the script that handles it under (StarterGui > GameUI > UIHandler)
 
 ### Adding the Song (+metadata)
 The script that handles applying properties to the songs is a Module Script named SongIDs and is located in ReplicatedStorage. Inside the script each song is given a table that includes all of the info/metadata the song will use. Additionally the script follows this format:
