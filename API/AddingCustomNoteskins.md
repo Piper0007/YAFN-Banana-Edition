@@ -1,4 +1,4 @@
-## Adding Custom Noteskins/Notesplashes [Add to API]
+## Adding Custom Noteskins/Notesplashes
 First off, you must upload the noteskin or notesplash you want to Roblox Studio, it must be in spritesheet form. After that, you go to (ReplicatedStorage -> Modules -> Images -> Assets -> noteSkins_K) and duplicate the Image Label named “Original”. Next, you rename the Image Label to whatever you want the noteskin to be called and change the property called “Image” to the image id of the note skin/splash you uploaded. Now, there will be a Module Script under the noteskin named “XML” and inside of it you will include the xml data for said noteskin. This is sort of the format you would want to follow:
 ```lua
 return [[==[   ]==]]
