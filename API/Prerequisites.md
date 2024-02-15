@@ -112,8 +112,8 @@ If you want to add a certain note skin into settings you go to (ReplicatedStorag
 
 ![Image](https://github.com/Piper0007/YAFN-Banana-Edition/assets/110263550/ca686df9-b3eb-4c18-86fd-e15502f1cfa9)
 And inside of the list you will add or remove whatever note skins you like.
-
-Adding Normal, Dead, and Winning Icons
+## Adding/Applying Icons
+### Adding Normal, Dead, and Winning Icons
 You first need to go to (ReplicatedStorage -> Modules -> Icons) and inside of the script you will find a list of icons that list as such:
 ```lua
 return {
