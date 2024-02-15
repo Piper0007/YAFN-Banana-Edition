@@ -8,3 +8,4 @@ Here are some links that might be helpful:
 - [Adding/Applying Icons](Adding%5CApplying%20Icons.md)
 - [Adding/Modifying Songs](AddingModifyingSongs.md)
 - [Adding Custom Noteskins/Notesplashes](AddingCustomNoteskins.md)
+- [Error Handling (Unfinished)](ErrorHandling.md)
