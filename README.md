@@ -14,4 +14,4 @@ Links the API's:
 - [ ] GameHandler.lua
 - [ ] UIHandler.lua
 - [ ] Game.lua
-- [ ] Custom Notes and Note Splashes
+- [Custom Notes and Note Splashes](https://github.com/Piper0007/YAFN-Banana-Edition/wiki/Adding-Custom-Notes-or-Splashes)
