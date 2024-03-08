@@ -6,38 +6,30 @@
 Modchart Variables
 </summary>
 	
-### flipMode : boolean
-	
-```
+### flipMode : Boolean	
+``
 A bool which tells if it's playing Dad side.
-```
+``
 	
 ### p1 : Character
-	
 ```The opponent character.```
 	
 ### p2 : Character
-	
 ```The player character.```
 	
 ### dad : Character
-	
 ```Dad Character.```
 	
 ### dad2 : Character
-	
 ```Secondary Dad character.```
 	
 ### bf : Character
-	
 ```BF character.```
 	
 ### bf2 : Character
-	
 ```Secondary BF character.```
 	
-### playerObjects : table/Dictionary
-	
+### playerObjects : Table/Dictionary
 ```LiveScript
     || CONTENTS ||
     Dad : Object
@@ -46,183 +38,180 @@ A bool which tells if it's playing Dad side.
     BF2 : Object
 ```
 	
-### defaultcamzoom : number
-	
+### (readOnly) defaultcamzoom : Number
 ```Changes the FOV of the camera by 70. Default is 1.```
 	
-### playerNoteOffsets : table/Array
-	
+### playerNoteOffsets : Table/Array
 ```Contains 'Vector2' values, which tells the Receptor offset.```
 	
-### opponentNoteOffsets : table/Array
-	
+### opponentNoteOffsets : Table/Array
 ```Contains 'Vector2' values, which tells the Receptor offset.```
 	
-### playSound : function (soundId : id, volume : number) (default volume is 2)
-	
+### playSound : Function (soundId : robloxAssetID, volume : Number) (default volume is 2)
 ```A function which plays sounds```
 	
-### leftStrums : table/Array
-	
+### leftStrums : Table/Array
 ```Contains the receptors from the left side.```
 	
-### rightStrums : table/Array
-	
+### rightStrums : Table/Array	
 ```Contains the receptors from the right side.```
 	
-### dadStrums : table/Array
-	
+### dadStrums : Table/Array	
 ```Contains the opponent receptors.```
 	
-### playerStrums : table/Array
-	
+### playerStrums : Table/Array
 ```Contains the player receptors.```
 	
-### allReceptors : table/Array
-	
+### allReceptors : Table/Array	
 ```Contains Dad and BF receptors.```
 	
-### .GUI : table/Array
-	
+### .GUI : Table/Array
+``Basically contains everything you can do with a imageLabel``
 ```LiveScript
-	Basically contains everything you can do with a imageLabel
-    || CONTENTS ||
-    Rotation : number
-		 variable that dictates the rotation of the receptor(s)
+	|| CONTENTS ||
+	Rotation : Number /* variable that dictates the rotation of the receptor(s) */
 ```
 	
-### camControls : table/Dictionary
-	
+### camControls : Table/Dictionary
+``
+Handles the camera behaviour
+``
 ```LiveScript
-	Handles the camera behaviour.
 	|| CONTENTS ||		
-	zoom : number
+	zoom : Number
+		/*
 		Sets the game UI/camera zoom, depending by BehaviourType.
 		This value is useless if BehaviourType is set to "Separate".
-	BehaviourType : string (All,HUD,Camera,Separate)
+		*/
+	BehaviourType : String (All,HUD,Camera,Separate)
+		/*
 		Changes how the zoom should work.
-		Behaviour type is not used with the new system :/
-	hudZoom : number
+		Behaviour type is not used with the new system
+		*/
+	hudZoom : Number
+		/*
 		Sets the game UI zoom.
 		Only effective if BehaviourType is set to "Separate".
-	camZoom : number
+		*/
+	camZoom : Number
+		/*
 		Sets the camera zoom.
 		Only effective if BehaviourType is set to "Separate".
+		*/
 	camOffset : CFrame
-		Camera offset.
-	StayOnCenter : boolean
-		Forces the camera to stay in center of the spot.
-	DisableLerp : boolean
+	StayOnCenter : Boolean
+		/* Forces the camera to stay in center of the spot. */
+	DisableLerp : Boolean
+		/*
 		Toggles whenever the zoom should slowly tween back to their original value.
 		Useful if you want to make a consistent zoom mechanic.
+		*/
 ```
 	
-### internalSettings : table/Dictionary
-	
+### internalSettings : Table/Dictionary
+``Settings where you can toggle certain behaviours.``
 ```LiveScript
-Settings where you can toggle certain behaviours.
 || CONTENTS ||
-	autoSize : number
+	autoSize : Number
+		/*
 		Only used to determine sprites size at start up.
 		Its not recommended to edit this value.
-	notesRotateWithReceptors : boolean
-		This sets the notes to copy the receptors rotation.
-	notesShareTransparencyWithReceptors : boolean
-		This sets the notes to copy the receptors transparency. (Alpha variable for clarification)
-	OpponentNoteDrain : number
+		*/
+	notesRotateWithReceptors : Boolean
+		/* This sets the notes to copy the receptors rotation. */
+	notesShareTransparencyWithReceptors : Boolean
+		/* This sets the notes to copy the receptors transparency. (Alpha variable for clarification) */
+	OpponentNoteDrain : Number
+		/*
 		This toggles whenever the NPC should drain the players health, if given value is a number.
 		By default its set to False, which does nothing.
-	useDuoSkins : boolean
+		*/
+	useDuoSkins : Boolean
+		/*
 		Determines if the engine should use separate Note skins for each side.
 		Not recommended to edit, although its only used once at start up.
-	useBPMSyncing : booleans
+		*/
+	useBPMSyncing : Boolean
+		/*
 		Toggles if the engine should use the BPM syncing.
 		This is added beacuse certain modcharts breaks if this is used.
 		We dont know why as well.
-	currentNoteSkinChange : table|nil
+		*/
+	currentNoteSkinChange : Table|nil
+		/*
 		This variable is used to change the note skin as soon they spawn.
 		Contains the XML, ImageLabel and a boolean in order to work.
 		Not recommended to edit.
-	showOnlyStrums : boolean
-		Unused.
-	NoteSpawnTransparency : number
+		*/
+	showOnlyStrums : Boolean
+		/* Unused. */
+	NoteSpawnTransparency : Number
+		/*
 		This variable is used to change the notes transparency as soon they spawn.
 		Must range from 0 to 1.
-	minHealth : number
-		This variable determins the minimum health that health drain will go to before stopping
+		*/
+	minHealth : Number
+		/* This variable determins the minimum health that health drain will go to before stopping */
 ```
 	
 ### gameUI : Instance/ScreenGui
-	
-```LiveScript
+``
 Game user interface.
 If you want to add sprites to the UI, its recommended to add them via gameUI.realGameUI.Notes
-```
+``
 	
-### notes : table/Array
+### notes : Table/Array
+``A list of all the notes that are currently being rendered.``
 	
-```A list of all the notes that are currently being rendered.```
-	
-### unspawnedNotes : table/Array
-	
-```LiveScript
+### unspawnedNotes : Table/Array
+``
 An array which contains unspawned notes.
 Its ordered by strumTime.
-```
-### noteLanes : table/Array
-	
-```LiveScript
+``
+### noteLanes : Table/Array
+``
 An array that contains lanes with your current rendering notes. (can be BF or Dad, only one of them)
 I.E susNotesLanes[1][2]
 	Should access the first lane of notes and the second rendering note.
-```
-### susNoteLanes : table/Array
-	
-```LiveScript
+``
+### susNoteLanes : Table/Array
+``
 An array that contains lanes with your current rendering hold notes. (can be BF or Dad, only one of them)
 I.E susNotesLanes[1][2]
 	Should access the first lane of hold notes and the second rendering note.
-```
-### noteGroup : string
-	
+``
+### noteGroup : String
 ``A string which tells what noteGroup is the song currently using.``
 	
-### mapProps : string
-	
+### mapProps : String
 ``Should return the object for the map but prob won't work.``
 	
-### initialSpeed : number
-	
+### initialSpeed : Number	
 ``The speed of the scroll speed. This is like normal FNF but it's 0.45 times less``
 
-### plrStats : table/Array
-
-```
-A table that includes the player's stats
+### plrStats : Table/Array
+``A table that includes the player's stats``
+```LiveScript
 || CONTENTS ||
-	Health = 1;
-	DrainRate = 0; -- health drained in seconds.
-	MaxHealth = 2;
-	Score = 0;
+	Health : Number // Default: 1, health of the player
+	DrainRate : Number // Default: 0, health drained in seconds.
+	MaxHealth : Number // Default: 2, the maximum health of the player
+	Score : Number // Default: 0, the score of the player
 ```
 
-### HideNotes : function (hide: boolean, side:string, hideReceptors:boolean, speed:number)
-
+### HideNotes : Function (hideNotes: Boolean, side: String, hideReceptors: Boolean, speed: Number)
 ```A function that that just makes it a bit easier to hide the notes/receptors```
 
-### MoveCamera : function (position: CFrame)
-
+### MoveCamera : Function (position: CFrame)
 ```A function that simplifies the process of getting the camera from point A to point B```
 
-### addSprite : function (tag: string, image: string, parent: Instance)
-
+### addSprite : Function (tag: String, image: String, parent: Instance)
 ```
 A function that returns a new ImageLabel that acts as an overlay for your screen
 (By default, the image will be set to not visible so please remember to set it to visible)
 ```
 
-### addAnimatedSprite : function (image: ImageLabel, visible: boolean, parent: Instance)
-
+### addAnimatedSprite : Function (image: ImageLabel, visible: Boolean, parent: Instance)
 ```
 A function that returns a Sprite that autocalibrates it's size based on 2 given inputs.
 To explain, the ImageLabel you provide must have 2 attributes.
@@ -235,58 +224,64 @@ With that, the function is able to produce the accurate size needed for the spri
 ```
 	
 ### gameHandler : table/Directory
-	
+``Contains all the functions that affect the game``
 ```LiveScript
-Contains all the functions that affect the game
 || CONTENTS ||
-	-- Functions
-	changeIcon(name : string, side : boolean (false=dad, true=bf)) : function
-      		Changes the icon for the selected side.
-	changeAnimation(name : , player : object, speed, looped : boolean, force : boolean) : function
-		Changes player's animation but doesn't change appearance.
-	flash(hex, speed : number, int : initial transparency) : function
+	// Functions
+	changeIcon(name: String, side: Boolean (false=dad, true=bf)) : Function
+      		// Changes the icon for the selected side.
+	changeAnimation(name: String, player: Object, speed: Number, looped: Boolean, force: Boolean) : Function
+		// Changes player's animation but doesn't change appearance.
+	flash(hex: String, speed: Number, int: Number (initial transparency) ) : function
+		/*
 		Utilizes a frame that covers the size of the screen to tween its transparency to from the initial value to 1
       		(which is completely transparent).
+		*/
 	processEvent(event : string, value1 : float, value2 : float, ...)
+		/*
 		Runs an event through a processer that goes through all the known events and sends a signal to the 
       		EventTrigger if it is not already defined.
 		For a list of all the events go to the Events API
-	setProperty(va : string, value : value to set the property to)
-		|| LIST OF CHANGEABLE PROPERTIES ||
-		'camControls' -- list
-		'defaultCamZoom' -- number (default: 1)
-		'camGame.zoom' -- number
-		'camZooming' -- boolean
-		'songLength' -- This changes the length of the TimeBar, it does not change the actual length of the song
-	getSongName(SongData : moduleScript) -- returns the name of the song from a moduleScript
-	closeScript(name : string) -- Used to prevent the modchart from being used any more in a song (the name will be something like "modchart.lua")
-	receptChangeSkin(Receptor : int, NSLabel : imageLabel, XML : moduleScript) -- changes the receptors
-	ChangeNoteSkin(noteSkinName : string, boolSide (false=dad, true=bf), force : boolean, mania : int) -- Changes the note skin
-	Kill() -- This just kills the player, nothing special really (check if the player has death enabled before using this)
+		*/
+	setProperty(varName : String, value : Any)
+		/*
+		value // the value to set the property to
+		varName // The name of the variable, list of options \/
+		|| OPTIONS ||
+		'camControls' // list (do not use setProperty() for this)
+		'defaultCamZoom' // number, default: 1
+		'camGame.zoom' // number
+		'camZooming' // boolean
+		'songLength' // This changes the length of the TimeBar, it does not change the actual length of the song
+		*/
+	getSongName(SongData: ModuleScript) // returns the name of the song from a moduleScript
+	closeScript(name: String) // Used to prevent the modchart from being used any more in a song (the name will be something like "modchart.lua")
+	receptChangeSkin(Receptor: Integer, NSLabel: ImageLabel, XML: ModuleScript) // changes the receptors
+	ChangeNoteSkin(noteSkinName: String, boolSide: Boolean (false=dad, true=bf), force: Boolean, mania: Integer) // Changes the note skin
+	Kill() // This just kills the player, nothing special really (check if the player has death enabled before using this)
 
-	-- Lists/Variables
-	settings: --Contains a list of all the player's settings
-	PlayerObjects: --Contains a list of the players' objects (dad, bf)
-	PositioningParts: --Contains a list of all the parts to the stage
-		Left = nil; -- Dad
-		Right = nil; -- Boyfriend
-		Left2 = nil; -- Second BF
-		Right2 = nil;
-		Camera = nil;
-		isPlayer = {nil,nil,nil,nil}; -- bf, dad, bf2, dad2
-		AccuracyRate = nil; -- the funny messages
-		PlayAs = nil; -- none, left or right
-		isOpponentAvailable = nil; -- fighting against a ghost?????
-		Spot = nil;
-		--BFIcon = BFIcon; -- DEPRECATED
-		--DadIcon = DadIcon; -- DEPRECATED
-		CameraPlayer = false;
-	PlayerStats: --Contains a list of all the player's stats
-		Health = 1;
-		DrainRate = 0; -- health drained in seconds.
-		MaxHealth = 2;
-		Score = 0;
-	
+	// Lists/Variables
+	settings: // Contains a list of all the player's settings
+	PlayerObjects: // Contains a list of the players' objects (dad, bf)
+	PositioningParts: // Contains a list of all the parts to the stage
+		Left: Instance //  Dad
+		Right: Instance // Boyfriend
+		Left2: Instance // Second BF
+		Right2: Instance // Second Dad
+		Camera: Instance
+		isPlayer: Player[] // bf, dad, bf2, dad2
+		AccuracyRate: String // the funny messages
+		PlayAs: Boolean // none, left or right
+		isOpponentAvailable: Player? // If it has a value then there is a opponent on the stage
+		Spot: Instance // It's the boombox
+		//BFIcon: IconSprite // DEPRECATED
+		//DadIcon: IconSprite // DEPRECATED
+		CameraPlayer: Boolean
+	PlayerStats: //Contains a list of all the player's stats
+		Health: Number // Default: 1
+		DrainRate: Number // Default: 0, health drained in seconds.
+		MaxHealth: Number // Default: 2
+		Score: Number // Default: 0
 ```
 	
 </details>
