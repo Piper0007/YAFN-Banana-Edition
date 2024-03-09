@@ -137,7 +137,7 @@ Handles the camera behaviour
 		This is added beacuse certain modcharts breaks if this is used.
 		We dont know why as well.
 		*/
-	currentNoteSkinChange : Table|nil
+	currentNoteSkinChange : Table | nil
 		/*
 		This variable is used to change the note skin as soon they spawn.
 		Contains the XML, ImageLabel and a boolean in order to work.
@@ -193,10 +193,10 @@ I.E susNotesLanes[1][2]
 ``A table that includes the player's stats``
 ```LiveScript
 || CONTENTS ||
-	Health : Number // Default: 1, health of the player
-	DrainRate : Number // Default: 0, health drained in seconds.
-	MaxHealth : Number // Default: 2, the maximum health of the player
-	Score : Number // Default: 0, the score of the player
+	Health : Number /* Default: 1, health of the player */
+	DrainRate : Number /* Default: 0, health drained in seconds. */
+	MaxHealth : Number /* Default: 2, the maximum health of the player */
+	Score : Number /* Default: 0, the score of the player */
 ```
 
 ### HideNotes : Function (hideNotes: Boolean, side: String, hideReceptors: Boolean, speed: Number)
@@ -227,11 +227,11 @@ With that, the function is able to produce the accurate size needed for the spri
 ``Contains all the functions that affect the game``
 ```LiveScript
 || CONTENTS ||
-	// Functions
+	/* Functions */
 	changeIcon(name: String, side: Boolean (false=dad, true=bf)) : Function
-      		// Changes the icon for the selected side.
+      		/* Changes the icon for the selected side. */
 	changeAnimation(name: String, player: Object, speed: Number, looped: Boolean, force: Boolean) : Function
-		// Changes player's animation but doesn't change appearance.
+		/* Changes player's animation but doesn't change appearance. */
 	flash(hex: String, speed: Number, int: Number (initial transparency) ) : function
 		/*
 		Utilizes a frame that covers the size of the screen to tween its transparency to from the initial value to 1
@@ -244,44 +244,43 @@ With that, the function is able to produce the accurate size needed for the spri
 		For a list of all the events go to the Events API
 		*/
 	setProperty(varName : String, value : Any)
-		/*
-		value // the value to set the property to
-		varName // The name of the variable, list of options \/
+		value /* the value to set the property to */
+		varName /* The name of the variable, list of options \/ */
 		|| OPTIONS ||
-		'camControls' // list (do not use setProperty() for this)
-		'defaultCamZoom' // number, default: 1
-		'camGame.zoom' // number
-		'camZooming' // boolean
-		'songLength' // This changes the length of the TimeBar, it does not change the actual length of the song
+		'camControls' /* list (do not use setProperty() for this) */
+		'defaultCamZoom' /* number, default: 1 */
+		'camGame.zoom' /* number */
+		'camZooming' /* boolean */
+		'songLength' /* This changes the length of the TimeBar, it does not change the actual length of the song */
 		*/
-	getSongName(SongData: ModuleScript) // returns the name of the song from a moduleScript
-	closeScript(name: String) // Used to prevent the modchart from being used any more in a song (the name will be something like "modchart.lua")
-	receptChangeSkin(Receptor: Integer, NSLabel: ImageLabel, XML: ModuleScript) // changes the receptors
-	ChangeNoteSkin(noteSkinName: String, boolSide: Boolean (false=dad, true=bf), force: Boolean, mania: Integer) // Changes the note skin
-	Kill() // This just kills the player, nothing special really (check if the player has death enabled before using this)
+	getSongName(SongData: ModuleScript) /* returns the name of the song from a moduleScript */
+	closeScript(name: String) /* Used to prevent the modchart from being used any more in a song (the name will be something like "modchart.lua") */
+	receptChangeSkin(Receptor: Integer, NSLabel: ImageLabel, XML: ModuleScript) /* changes the receptors
+	ChangeNoteSkin(noteSkinName: String, boolSide: Boolean (false=dad, true=bf), force: Boolean, mania: Integer) /* Changes the note skin */
+	Kill() /* This just kills the player, nothing special really (check if the player has death enabled before using this) */
 
-	// Lists/Variables
-	settings: // Contains a list of all the player's settings
-	PlayerObjects: // Contains a list of the players' objects (dad, bf)
-	PositioningParts: // Contains a list of all the parts to the stage
-		Left: Instance //  Dad
-		Right: Instance // Boyfriend
-		Left2: Instance // Second BF
-		Right2: Instance // Second Dad
+	/* Lists/Variables
+	settings: /* Contains a list of all the player's settings */
+	PlayerObjects: /* Contains a list of the players' objects (dad, bf) */
+	PositioningParts: /* Contains a list of all the parts to the stage */
+		Left: Instance /*  Dad */
+		Right: Instance /* Boyfriend */
+		Left2: Instance /* Second BF */
+		Right2: Instance /* Second Dad */
 		Camera: Instance
-		isPlayer: Player[] // bf, dad, bf2, dad2
-		AccuracyRate: String // the funny messages
-		PlayAs: Boolean // none, left or right
-		isOpponentAvailable: Player? // If it has a value then there is a opponent on the stage
-		Spot: Instance // It's the boombox
-		//BFIcon: IconSprite // DEPRECATED
-		//DadIcon: IconSprite // DEPRECATED
+		isPlayer: Player[] /* bf, dad, bf2, dad2 */
+		AccuracyRate: String /* the funny messages */
+		PlayAs: Boolean /* none, left or right */
+		isOpponentAvailable: Player? /* If it has a value then there is a opponent on the stage */
+		Spot: Instance /* It's the boombox */
+		/*BFIcon: IconSprite DEPRECATED
+		/*DadIcon: IconSprite DEPRECATED
 		CameraPlayer: Boolean
-	PlayerStats: //Contains a list of all the player's stats
-		Health: Number // Default: 1
-		DrainRate: Number // Default: 0, health drained in seconds.
-		MaxHealth: Number // Default: 2
-		Score: Number // Default: 0
+	PlayerStats: /* Contains a list of all the player's stats */
+		Health: Number /* Default: 1 */
+		DrainRate: Number /* Default: 0, health drained in seconds. */
+		MaxHealth: Number /* Default: 2 */
+		Score: Number /* Default: 0 */
 ```
 	
 </details>
