@@ -3,7 +3,7 @@
 <details>
 	
 <summary>
-Modchart Variables
+Modchart Variables (and Functions)
 </summary>
 	
 ### flipMode : Boolean	
@@ -189,15 +189,8 @@ I.E susNotesLanes[1][2]
 ### initialSpeed : Number	
 ``The speed of the scroll speed. This is like normal FNF but it's 0.45 times less``
 
-### plrStats : Table/Array
+### plrStats : [PlayerStats](#PlayerStatsClass)
 ``A table that includes the player's stats``
-```LiveScript
-|| CONTENTS ||
-	Health : Number /* Default: 1, health of the player */
-	DrainRate : Number /* Default: 0, health drained in seconds. */
-	MaxHealth : Number /* Default: 2, the maximum health of the player */
-	Score : Number /* Default: 0, the score of the player */
-```
 
 ### HideNotes : Function (hideNotes: Boolean, side: String, hideReceptors: Boolean, speed: Number)
 ```A function that that just makes it a bit easier to hide the notes/receptors```
@@ -222,76 +215,39 @@ With that, the function is able to produce the accurate size needed for the spri
 (When scaling your image label, make sure the size is changed before turning it into a animated sprite)
 (Also when changing the scale only use the Scale and not the offset)
 ```
-	
-### gameHandler : table/Directory
-``Contains all the functions that affect the game``
-```LiveScript
-|| CONTENTS ||
-	/* Functions */
-	changeIcon(name: String, side: Boolean (false=dad, true=bf)) : Function
-      		/* Changes the icon for the selected side. */
-	changeAnimation(name: String, player: Object, speed: Number, looped: Boolean, force: Boolean) : Function
-		/* Changes player's animation but doesn't change appearance. */
-	flash(hex: String, speed: Number, int: Number (initial transparency) ) : function
-		/*
-		Utilizes a frame that covers the size of the screen to tween its transparency to from the initial value to 1
-      		(which is completely transparent).
-		*/
-	processEvent(event : string, value1 : float, value2 : float, ...)
-		/*
-		Runs an event through a processer that goes through all the known events and sends a signal to the 
-      		EventTrigger if it is not already defined.
-		For a list of all the events go to the Events API
-		*/
-	setProperty(varName : String, value : Any)
-		value /* the value to set the property to */
-		varName /* The name of the variable, list of options \/ */
-		|| OPTIONS ||
-		'camControls' /* list (do not use setProperty() for this) */
-		'defaultCamZoom' /* number, default: 1 */
-		'camGame.zoom' /* number */
-		'camZooming' /* boolean */
-		'songLength' /* This changes the length of the TimeBar, it does not change the actual length of the song */
-		*/
-	getSongName(SongData: ModuleScript) /* returns the name of the song from a moduleScript */
-	closeScript(name: String) /* Used to prevent the modchart from being used any more in a song (the name will be something like "modchart.lua") */
-	receptChangeSkin(Receptor: Integer, NSLabel: ImageLabel, XML: ModuleScript) /* changes the receptors
-	ChangeNoteSkin(noteSkinName: String, boolSide: Boolean (false=dad, true=bf), force: Boolean, mania: Integer) /* Changes the note skin */
-	Kill() /* This just kills the player, nothing special really (check if the player has death enabled before using this) */
 
-	/* Lists/Variables
-	settings: /* Contains a list of all the player's settings */
-	PlayerObjects: /* Contains a list of the players' objects (dad, bf) */
-	PositioningParts: /* Contains a list of all the parts to the stage */
-		Left: Instance /*  Dad */
-		Right: Instance /* Boyfriend */
-		Left2: Instance /* Second BF */
-		Right2: Instance /* Second Dad */
-		Camera: Instance
-		isPlayer: Player[] /* bf, dad, bf2, dad2 */
-		AccuracyRate: String /* the funny messages */
-		PlayAs: Boolean /* none, left or right */
-		isOpponentAvailable: Player? /* If it has a value then there is a opponent on the stage */
-		Spot: Instance /* It's the boombox */
-		/*BFIcon: IconSprite DEPRECATED
-		/*DadIcon: IconSprite DEPRECATED
-		CameraPlayer: Boolean
-	PlayerStats: /* Contains a list of all the player's stats */
-		Health: Number /* Default: 1 */
-		DrainRate: Number /* Default: 0, health drained in seconds. */
-		MaxHealth: Number /* Default: 2 */
-		Score: Number /* Default: 0 */
-```
-	
+<details>
+<summary>gameHandler : Array</summary>
+
+## Description
+Contains all the functions that affect the game
+## Properties
+| Name : Type | Description |
+|-------------|-------------|
+| changeIcon : function(name: string, side: boolean (false=dad, true=bf) | Changes the icon for the selected side |
+| changeAnimation : function(name: string, player: Object, speed: number, looped: boolean, force, boolean) | Changes player's animation but doesn't change appearance |
+| flash : function(hex: string, speed: number, int: number (intial transparency) | Utilizes a frame that covers the size of the screen to tween its transparency to from the initial value to 1 (which is completely transparent). |
+| processEvent : function(event : string, value1 : any, value2 : any, ...) | Runs an event through a processer that goes through all the known events and sends a signal to the EventTrigger if it is not already defined. For a list of all the events go to [Events](Events.md) |
+| setProperty : function(varName : string, value : any) | A function used to change the values of specific variables (that can't be accessed otherwise)<br> Options for "varName":<br>'defaultCamZoom', 'camGame.zoom', 'camZooming', 'songLength'|
+| getSongName : function(SongData: ModuleScript) | returns the name of the song from a modulescript (the chart data basically) |
+| closeScript : function(name : string) | Used to disable modcharts from running during a song (the name will be something like "modchart.lua") |
+| receptChangeSkin : function(Receptor : integer, NoteSkinLabel : ImageLabel, XML : ModuleScript) | Changes the skin of the receptors |
+| ChangeNoteSkin : function(noteSkinName : string, boolSide : boolean (false=dad, true=bf), force : boolean, mania : integer) | Changes the note skin (as well as the receptors) |
+| Kill : function | This just kills the player (make sure to check if the player has death enabled in settings before using it) |
+| settings : Array | Contains a list of all the player's settings |
+| PlayerObjects : [Character](#CharacterClass)[] | Contains a list of characters playing the song ("BF", "Dad", "BF2", "Dad2") |
+| PositioningParts : Array | Contains a list of all the parts needed for setting up and handling the stage<br><br>Left: Instance<br>Right: Instance<br>Left2: Instance<br>Right2: Instance<br>Camera: Instance<br>isPlayer: Player[]<br>Spot: Instance (it's the boombox)|
+| PlayerStats : [PlayerStats](#PlayerStatsClass) | Contains a list of all the player's stats |
+</details>
+
 </details>
 
 <details>
-	<summary>Modchart Functions</summary>
+<summary>Modchart Functions</summary>
 	
+### Return Functions are vital for modcharts to work and are called at specific times.
 	
-### Functions are vital for modcharts to work and are called at specific times.
-	
-- "preInit = function(gameUI : frame, module : table)"
+- "preInit = function(gameUI : Frame, module : table)"
 	
 ```
 This function is played before the song has started loadin
@@ -327,36 +283,31 @@ Runs when the player hits a note
 Runs when the opponent hits a note, this includes other players
 ```
 	
-- "Update = function(deltaTime)"
+- "Update = function(deltaTime : number)"
 	
 ```
 Runs whenever a frame is rendered
 ```
 	
-- "StepHit = function(curStep)"
+- "StepHit = function(curStep : integer)"
 	
 ```
 Runs when a step is hit
 ```
 	
-- "BeatHit = function(curBeat)"
+- "BeatHit = function(curBeat : integer)"
 	
 ```
 Runs when a beat is hit
 ```
 	
-- "sectionChange = function(currentSection : table)"
+- "sectionChange = function(currentSection : [Section](#SectionClass))"
 
 ```
 Runs when a section changes
-	"currentSection" is a table that includes,
-		mustHitSection : boolean,
-		typeOfSection : number,
-		lengthInSteps : number,
-		sectionNotes : table
 ```
 	
-- "EventTrigger = function(name : string, value1 : float, value2 : float, ...)"
+- "EventTrigger = function(name : string, value1 : any, value2 : any, ...)"
 	
 ```
 Runs when an event is played, even when an event is called from a modchart.
@@ -368,116 +319,176 @@ Runs when an event is played, even when an event is called from a modchart.
 <summary>gameHandler.processEvent()</summary>
 	
 ```LiveScript
+/*
 || MORE IN DEPTH IN THE EVENTS API ||
 
 This function will be used whenever you want to process an event.
 Any time "processEvent()" is used the "EventTrigger()" event is played inside the modchart.
+*/
 ```
 
   - "set camera zoom"
 	
 ```LiveScript
-value1 : number
-	Sets the cameraZoom to value1
-value2 : number
-	Sets the hudZoom to value2
+value1 : Number
+	# Sets the cameraZoom to value1
+value2 : Number
+	# Sets the hudZoom to value2
 ```
 	
   - "tween camera zoom"
 	
 ```LiveScript
-value1 : number
-	Target camera zoom
-value2 : number
-	Length of the tween
+value1 : Number
+	# Target camera zoom
+value2 : Number
+	# Length of the tween
 value3 : EasingStyle
-	Sets the style of the tween
+	# Sets the style of the tween
 value4 : EasingDirection
-	Sets the type of tween. (In, Out, InOut)
+	# Sets the type of tween. (In, Out, InOut)
 ```
 	
   - "add camera zoom"
 	
 ```LiveScript
-This event only plays when the "CameraZooms" settings is true and
-hudZoom is less than 1.4.
-	value1 : number
-		Changes the hudZoom by this number
-	value2 : number
-		Changes the cameraZoom by this number
+# This event only plays when the "CameraZooms" settings is true and hudZoom is less than 1.4.
+	value1 : Number
+		# Changes the hudZoom by this number
+	value2 : Number
+		# Changes the cameraZoom by this number
 ```
 	
   - "camera follow pos"
 	
 ```LiveScript
-Changes the camera offset to the defined position.
-	value1 : number
-		The x value of the offset
-	value2 : number
-		The y value of the offset
+# Changes the camera offset to the defined position.
+	value1 : Number
+		# The x value of the offset
+	value2 : Number
+		# The y value of the offset
 ```
 	
   - "set cam speed"
 	
 ```LiveScript
-Cam Speed controls how fast the camera moves from position to position.
-	value1 : number
-		Sets the camSpeed to this value
+# Cam Speed controls how fast the camera moves from position to position.
+	value1 : Number
+		# Sets the camSpeed to this value
 ```
   - "camera flash"  
 ```LiveScript
-This event only plays when the "distractions" setting is true
-	value1 : number
-		Controls the speed of the flash
-	value2 : hex
-		Controls the color of the flash
+# This event only plays when the "distractions" setting is true
+	value1 : Number
+		# Controls the speed of the flash
+	value2 : string # Hex value
+		# Controls the color of the flash
 ```
 	
   - "screen shake"
 	
 ```LiveScript
 This event shakes the screen but can also shake the UI
-	value1 : number / string ("10, 0.1")
-		When it is a number it controls the duration of the screen shake
+	value1 : Number | String # ("10, 0.1")
+		/*
+		When it is a number it controls the duration of the screen shake.
         	When it is a string separated by a comma the first number controls the
         	duration of the UI shake and the second controls the intensity.
-	value2 : number / string ("10, 0.1")
-		When a number it controls the intensity of the screen shake
-        	When a string separated by a comma the first number controls the 
-        	duration of the UI shake and the second controls the intensity.
+		*/
+	value2 : Number | String # ("10, 0.1")
+		/*
+		When it is a number, it controls the intensity of the screen shake.
+        	When it is string separated by a comma, the first number controls the duration of the UI shake and the second number controls the intensity.
+		*/
 ```
 	
   - "hey!"
 	
 ```LiveScript
-Plays the "hey" animation for either boyfriend, girlfriend, or dad
-however, only boyfriend works at the moment.
-	value1 : string
-		Name of the character to dance.
+# Plays the "hey" animation for either boyfriend, girlfriend, or dad however, only boyfriend works at the moment.
+	value1 : String
+		# Name of the character to dance.
 ```
 	
   - "lane modifier"  
 	
 ```LiveScript
-Changes the scroll speed of a arrows in a specific lane.
-	value1 : number
-		The value is the lane. Usually there are 8 lanes
-	value2 : number
-		The value is the speed the scroll speed changes to
+# Changes the scroll speed of a arrows in a specific lane.
+	value1 : Number
+		# The value is the lane. Usually there are 8 lanes
+	value2 : Number
+		# The value is the speed the scroll speed changes to
 ```
 	
   - "change scroll speed"
 
 ```LiveScript
-This event only plays when the setting "ForceSpeed" is false.
-	value1 : number
-		The speed the scroll speed will change to. (Speed Multiplier that is not actuall scroll speed)
-	value2 : number
-		How quick in seconds that the scroll speed will change to it's new value.
+# This event only plays when the setting "ForceSpeed" is false.
+	value1 : Number
+		# The speed the scroll speed will change to. (Speed Multiplier that is not actuall scroll speed)
+	value2 : Number
+		# How quick in seconds that the scroll speed will change to it's new value.
 ```
 
 </details>
 
+<details>
+<summary>Classes</summary>
+
+---
+<details>
+<summary name="CharacterClass">Character</summary>
+
+## Description
+A class that contains all the necessary info to animate a player model.
+## Properties
+| Name : Type | Description |
+|-------------|-------------|
+| BeatDancer : boolean | Beat dancers are characters that have 2 different idle animations that play back and forth |
+| Obj : Instance | The actual rig of the character, which includes all the parts to the model. (This gets changed everytime the rig is changed) |
+| EventHandler : LocalScript | Just the animator script of the player (do not ever change this value) |
+| IsPlayer : boolean | A value that determines if the character is controlled by a player or not |
+| Name : string | It is just the name of player who the animation is parent under. Could be used for modcharts |
+| Animator : Instance | Do not change this value |
+| (readOnly) StartCFrame : CFrame | This is just for the starting CFrame of the character, but changing it after the character is made does nothing |
+| Animations : Array | A table that contains all of the animations that the Character has loaded |
+| Microphone : nil | DEPRECATED |
+| (readOnly) CurrPlaying : string | The name of the currently playing animation |
+| (readOnly) Holding : boolean | Whether or not the animation is continuously playing |
+| (readOnly) HoldTimer : number | How long the animation will play for |
+| (readOnly) AnimPlaying : boolean | Whether or not there is an animation playing currently |
+| (readOnly) AnimName : string | The name of the animation set |
+
+</details>
+
+<details>
+<summary name="SectionClass">Section</summary>
+
+## Description
+A class that stores specific information about a section. Such as if the camera focuses on BF or Dad, the notes, the length, and the type of section.
+## Properties
+| Name : Type | Description |
+|-------------|-------------|
+| mustHitSection : boolean | Value is true if the section is focused on BF and false if it is focused on Dad. |
+| typeOfSection : number | Determines the amount of beats per section, Default: 4 |
+| lengthInSteps : number | Determines the length in steps that section is, Default: 16 |
+| sectionNotes : Note[] | Includes a list of notes for the current section |
+</details>
+
+</details>
+
+<details>
+<summary name="PlayerStatsClass">PlayerStats</summary>
+
+## Description
+A class that includes the stats of the player (score, health, etc.)
+## Properties
+| Name : Type | Description |
+|-------------|-------------|
+| Health : number | The current health of the player, default: 1 |
+| DrainRate : number | The speed in seconds that health will drain |
+| MaxHealth : number | The maximum health of the player, default: 2 |
+| Score : number | The score of the player |
 <details>
 	
 <summary>Examples</summary>
