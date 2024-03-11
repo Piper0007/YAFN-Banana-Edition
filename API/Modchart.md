@@ -242,6 +242,8 @@ Contains all the functions that affect the game
 
 </details>
 
+---
+
 <details>
 <summary>Modchart Functions</summary>
 	
@@ -314,6 +316,8 @@ Runs when an event is played, even when an event is called from a modchart.
 ```
 	
 </details>
+
+---
 
 <details>
 <summary>gameHandler.processEvent()</summary>
@@ -432,10 +436,12 @@ This event shakes the screen but can also shake the UI
 
 </details>
 
+---
+
 <details>
 <summary>Classes</summary>
 
----
+<br>
 <details>
 <summary name="CharacterClass">Character</summary>
 
@@ -475,8 +481,6 @@ A class that stores specific information about a section. Such as if the camera 
 | sectionNotes : Note[] | Includes a list of notes for the current section |
 </details>
 
-</details>
-
 <details>
 <summary name="PlayerStatsClass">PlayerStats</summary>
 
@@ -489,8 +493,12 @@ A class that includes the stats of the player (score, health, etc.)
 | DrainRate : number | The speed in seconds that health will drain |
 | MaxHealth : number | The maximum health of the player, default: 2 |
 | Score : number | The score of the player |
+</details>
+</details>
+
+---
+
 <details>
-	
 <summary>Examples</summary>
 
 ```lua
