@@ -1,23 +1,18 @@
 # SongIDs
 
 <details>
-<summary>What is this?</summary>
+<summary><h2>What is this?</h2></summary>
 
-```
-SongIDs is a module script located in "ReplicatedStorage" that defines the song variables that go with a every song.
+SongIDs is a module script located in "ReplicatedStorage" that defines the song variables that go with every song.<br>
 This is required when adding new songs as it requires the Instrumental sounds to be defined here.
-```
 </details>
 
 <details>
-<summary>How should it look?</summary>
+<summary><h2>How should it look?</h2></summary>
 
-```
-Each songId follows a strict format in order for the game to find and retrieve the data for each song.
-
+Each songId follows a strict format in order for the game to find and retrieve the data for each song.<br><br>
 It would look something like this:
-```
-```LiveScript
+```lua
 	["songName"] = {
 		Instrumental = soundID;
 	};
@@ -25,12 +20,13 @@ It would look something like this:
 </details>
 
 <details>
-<summary>List of all variables</summary>
+<summary><h2>List of all variables</h2></summary>
   
-````LiveScript
-	Instrumental = _;
-	Voices = _;
-	Offset = 0; -- (Optional) Applies an offset to the chart
+````lua
+["songName"] = {
+	Instrumental = 0; -- Required (if you want you can combine both the voices and instrumental into one audio file)
+	Voices = 0; -- If the chart has ‘“needsVoices”: true’ then the voices would be required 
+	Offset = 0; -- (Optional) Applies an offset (in milliseconds) to the chart
 	EventOffset = 0; -- (Optional) Applies an offset to the events
 	BFAnimations = _; -- (Optional) Set Boyfriends animation
 	BF2Animations = _; -- (Optional) Adds a secondary Boyfriend with said animation
@@ -63,8 +59,8 @@ It would look something like this:
 		0; -- image of the 1
 		0; -- image of the go!
 	};
-	IntroSounds = { -- 
-		"rbxassetid://"; -- Voice for 3 -- If you want there to be silence just make it blank like "";
+	IntroSounds = { -- (Optional) Changes the sounds for the countdown
+		"rbxassetid://"; -- Voice for 3 -- If you want there to be silence just make it blank like ""
 		"rbxassetid://"; -- Voice for 2
 		"rbxassetid://"; -- Voice for 1
 		"rbxassetid://"; -- Voice for Go
@@ -74,7 +70,8 @@ It would look something like this:
 		good="rbxassetid://10849281330",
 		bad="rbxassetid://10849282992",
 		trash="rbxassetid://10849284734"
-		};
 	};
+};
 ````
 </details>
+
