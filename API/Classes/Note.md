@@ -1,7 +1,8 @@
 # Note
 
 ## Description
-A class that contains the properties for notes to function
+A class that contains the properties for notes to function<br>
+The class also contains all of the properties of a [Sprite](Sprite.md)
 ## Properties
 | Name : Type | Description |
 |-------------|-------------|
@@ -14,7 +15,7 @@ A class that contains the properties for notes to function
 | scrollDirection : string | The direction that the note will go in<br>Options: "Up", "Down", "Left", "Right" |
 | CanBeHit : boolean | Whether or not the player can hit the note |
 | (readOnly) GoodHit : boolean | Whether or not the player got a good hit on the note |
-| PrevNote : [Note](Note.md)/nil | The note that came before (used for sustain notes) |
+| PrevNote : [Note](#NoteClass)/nil | The note that came before (used for sustain notes) |
 | SustainLength : number | The length of the sustain (if the note is a sustain note) |
 | (readOnly) IsSustain: boolean/nil | Whether or not the note is a sustain note (value is nil if it is not) |
 | (readOnly) IsSusEnd : boolean | Whether or not the note is the end of a sustain note |
@@ -29,12 +30,12 @@ A class that contains the properties for notes to function
 | Mana : number | This variable is never used |
 | (readOnly) NoteGroup : string | Lists whatever NoteGroup the note is using |
 | ReceptorX : number | Changes the position of the note on the X axis |
-| Type : string | Used in NoteGroups and would apply whatever note type the string is, the types are defined in the the "Note" ModuleScript in ReplicatedStorage > Modules |
+| Type : string | Used in NoteGroups and would apply whatever note type the string is, the types are defined in the the "Note" ModuleScript in (ReplicatedStorage > Modules) |
 | manualXOffset : number | DEPRECATED |
-| HealthLoss: number | Determines how much heath the player will lose when the note is missed, if value is changed the note becomes a note that you have to hit to receive damage, which overrides the shouldPress property |
+| HealthLoss: number | Determines how much health the player will lose when the note is missed, if value is changed the note becomes a note that you have to hit to receive damage, which overrides the shouldPress property |
 | Transparency : number | The current transparency of the note |
 | DefaultTransparency : number | The starting transparency of the note |
-| InitialPos : number | The intial position of the note which is determined by the strum time and not the actual position it currently is |
+| InitialPos : number | The initial position of the note which is determined by the strum time and not the actual position it currently is |
 | HoldParent: boolean | Value is true if the note is a sustain (but it is not a sustain end) |
 | RawData : table | The chart data of the note that is not processed |
 | Hitbox: number | How large the hitbox for the note is, recommended to just to *= method to change how large or small the hitbox is rather than setting it to a specific value |
