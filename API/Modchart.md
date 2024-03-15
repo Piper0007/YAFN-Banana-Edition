@@ -3,6 +3,8 @@
 <details>
 <summary><h2>Modchart Variables (and Functions)</h2></summary>
 
+> Modchart variables can only be referenced inside of a returned modchart function (which are defined after this section)
+
 <details>
 <summary>Standard Modchart Variables</summary>
 
@@ -32,6 +34,7 @@
 | notes : [Note](Classes/Note.md)[] | A list of all the notes that are currently being rendered |
 | unspawnedNotes : [Note](Classes/Note.md)[] | A list that contains all unspawned notes which are ordered by strumTime |
 | plrStats : [PlayerStats](Classes/PlayerStats.md) | A table that includes the player's stats |
+| gameHandler : [GameHandler](Classes/GameHandler.md) | A class that includes functions and variables that control the game |
 </details>
 
 <details>
@@ -94,30 +97,6 @@ A list of game settings that change various behaviors
 | showOnlyStrums : boolean | Unused, what it does is hides the notes but not the receptors |
 | NoteSpawnTransparency : number | Determines the transparency of notes that spawn |
 | minHealth : number | This variable determines the minimum health that health drain will go to before stopping, used in conjunction with "plrStats.DrainRate" |
-</details>
-
-<details>
-<summary>gameHandler : table</summary>
-
-## Description
-Contains all the functions/variables that affect the game
-## Properties
-| Name : Type | Description |
-|-------------|-------------|
-| changeIcon : function(name: string, side: boolean (false=dad, true=bf) | Changes the icon for the selected side |
-| changeAnimation : function(name: string, player: [Character](Classes/Character.md), speed: number, looped: boolean, force: boolean) | Changes player's animation but doesn't change appearance |
-| flash : function(hex: string, speed: number, initialTransparency: number | Flashes the screen at the specified speed, color, and starting transparency (this function is used with the “camera flash” event |
-| processEvent : function(event : string, value1 : any, value2 : any, ...) | Runs an event through a processor that goes through all the known events and sends a signal to the EventTrigger if it is not already defined. For a list of all the events go to [Events](Events.md) |
-| setProperty : function(varName : string, value : any) | A function used to change the values of specific variables (that can't be accessed otherwise)<br> Options for "varName":<br>'defaultCamZoom', 'camGame.zoom', 'camZooming', 'songLength'|
-| getSongName : function(SongData: [ModuleScript](https://create.roblox.com/docs/en-us/reference/engine/classes/ModuleScript)) | returns the name of the song from a modulescript (the chart data basically) |
-| closeScript : function(name : string) | Used to disable modcharts from running during a song (the name will be something like "modchart.lua") |
-| receptChangeSkin : function(Receptor : integer, NoteSkinLabel : [ImageLabel](https://create.roblox.com/docs/en-us/reference/engine/classes/ImageLabel), XML : [ModuleScript](https://create.roblox.com/docs/en-us/reference/engine/classes/ModuleScript)) | Changes the skin of the receptors |
-| ChangeNoteSkin : function(noteSkinName : string, boolSide : boolean (false=dad, true=bf), force : boolean, mania : integer) | Changes the note skin (as well as the receptors) |
-| Kill : function() | This just kills the player (make sure to check if the player has death enabled in settings before using it) |
-| settings : table | Contains a list of all the player's settings |
-| PlayerObjects : [Character](Classes/Character.md){} | Contains a list of characters playing the song ("BF", "Dad", "BF2", "Dad2") |
-| PositioningParts : table | Contains a list of all the parts needed for setting up and handling the stage<br><br>Left: [Instance](https://create.roblox.com/docs/en-us/reference/engine/classes/Instance)<br>Right: [Instance](https://create.roblox.com/docs/en-us/reference/engine/classes/Instance)<br>Left2: [Instance](https://create.roblox.com/docs/en-us/reference/engine/classes/Instance)<br>Right2: [Instance](https://create.roblox.com/docs/en-us/reference/engine/classes/Instance)<br>Camera: [Instance](https://create.roblox.com/docs/en-us/reference/engine/classes/Instance)<br>isPlayer: [Player](https://create.roblox.com/docs/en-us/reference/engine/classes/Player)[]<br>Spot: [Instance](https://create.roblox.com/docs/en-us/reference/engine/classes/Instance) (it's the boombox)|
-| PlayerStats : [PlayerStats](Classes/PlayerStats.md) | Contains a list of all the player's stats |
 </details>
 
 </details>
