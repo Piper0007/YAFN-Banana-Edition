@@ -1,7 +1,7 @@
 # Modcharts
 
 <details>
-<summary><h2>Modchart Variables (and Functions)</h2></summary>
+<summary><h2>Modchart Variables and Functions</h2></summary>
 
 > Modchart variables can only be referenced inside of a returned modchart function (which are defined after this section)
 
@@ -35,6 +35,9 @@
 | unspawnedNotes : [Note](Classes/Note.md)[] | A list that contains all unspawned notes which are ordered by strumTime |
 | plrStats : [PlayerStats](Classes/PlayerStats.md) | A table that includes the player's stats |
 | gameHandler : [GameHandler](Classes/GameHandler.md) | A class that includes functions and variables that control the game |
+| [internalSettings](#internalSettings) : table | A table that contains variables that change how the game functions in various ways |
+| [playerObjects](#playerObjects) : [Character](Classes/Character.md){} | A table that contains `Character`s that are included in the song |
+| [camControls](#camControls) : table | A table that contains variables that change how the camera works as well as its properties |
 </details>
 
 <details>
@@ -42,14 +45,17 @@
 
 | Name : Type | Description |
 |-------------|-------------|
-| HideNotes : function(hideNotes: boolean, side: string, hideReceptors: boolean, speed: number) | A function that that just makes it a bit easier to hide the notes/receptors |
-| MoveCamera : function(position: [CFrame](https://create.roblox.com/docs/en-us/reference/engine/datatypes/CFrame)) | A function that simplifies the process of getting the camera from point A to point B |
-| addSprite : function(name: string, image: string, parent: [Instance](https://create.roblox.com/docs/en-us/reference/engine/classes/Instance)) | A function that returns a new ImageLabel that acts as an overlay for your screen<br>(By default, the image will be set to not visible so please remember to set it to visible) |
-| addAnimatedSprite : function(image: [ImageLabel](https://create.roblox.com/docs/en-us/reference/engine/classes/ImageLabel), visible: boolean, parent: [Instance](https://create.roblox.com/docs/en-us/reference/engine/classes/Instance)) | A function that returns a Sprite that auto calibrates its size based on 2 given inputs.<br>To explain, the ImageLabel you provide must have 2 attributes.<br>(SpriteSize) must be a Vector2 value and set the two values to the width and height of the frame (or the frameSize)<br>(SpriteSheetSize) must be a Vector 2 value that is set to the size of the entire spritesheet's image<br><br>With that, the function is able to produce the accurate size needed for the sprite to fit in its frame.<br>(When scaling your image label, make sure the size is changed before turning it into a animated sprite)<br>(Also when changing the scale only use the Scale and not the offset) |
+| [HideNotes](#HideNotes) : function | A function that just makes it a bit easier to hide the notes/receptors |
+| [MoveCamera](#MoveCamera) : function | A function that simplifies the process of getting the camera from point A to point B, instantly |
+| [addSprite](#addSprite) : function | A function that returns a new ImageLabel that acts as an overlay for your screen<br>(By default, the image will be set to not visible so please remember to set it to visible) |
+| [addAnimatedSprite](#addAnimatedSprite) : function | A function that returns a Sprite that auto calibrates its size |
 </details>
 	
-<details>
-<summary>playerObjects : Character{}</summary>
+## Extra Stuff
+> Everything here is previously mentioned but explained in more detail
+
+<a name="playerObjects"></a>
+<details><summary>playerObjects : Character{}</summary>
 
 ## Description
 A list that contains the Characters that are on the stage
@@ -59,11 +65,11 @@ A list that contains the Characters that are on the stage
 | Dad : [Character](Classes/Character.md) | Lists dad's character |
 | BF : [Character](Classes/Character.md) | Lists bf's character |
 | Dad2 : [Character](Classes/Character.md) | Lists the second dad's character, sometimes nil |
-| BF2 : [Character](Classes/Classes/.md) | Lists the second bf's character, sometimes nil |
+| BF2 : [Character](Classes/Character.md) | Lists the second bf's character, sometimes nil |
 </details>
 
-<details>
-<summary>camControls : table</summary>
+<a name="camControls"></a>
+<details><summary>camControls : table</summary>
 
 ## Description
 Handles the camera behavior
@@ -79,8 +85,8 @@ Handles the camera behavior
 | DisableLerp : boolean | When false, the camera will move instantly between where it is and where it is going to go |
 </details>
 
-<details>
-<summary>internalSettings : table</summary>
+<a name="internalSettings"></a>
+<details><summary>internalSettings : table</summary>
 
 ## Description
 A list of game settings that change various behaviors 
@@ -99,6 +105,70 @@ A list of game settings that change various behaviors
 | minHealth : number | This variable determines the minimum health that health drain will go to before stopping, used in conjunction with "plrStats.DrainRate" |
 </details>
 
+<a name="HideNotes"></a><details><summary>HideNotes : function</summary>
+
+## Description
+A function that is used to hide the notes and or receptors for either the player, the opponent, or both
+## Parameters
+> Listed in the order that the parameters are required in
+
+| Name : Type | Description |
+|:------------|:-----------:|
+| hideNotes : boolean | Whether or not to hide the notes (if false then it will un-hide the notes, making them reappear) |
+| side : string | Determines which side will be affected.<br><br>Options are "left", "right", or "both" |
+| hideReceptors : boolean | Whether or not to hide the receptors as well |
+| speed : number | Determines how fast the transition will last for (how fast the tween plays) |
+## Example
+
+> Inside a modchart
+
+```lua
+HideNotes(true, flipMode and "left" or "right", true, 5)
+```
+Hides the notes and receptors for the opponent's side which takes 5 seconds to do
+</details>
+
+<a name="MoveCamera"></a><details><summary>MoveCamera : function</summary>
+
+## Description
+A function that moves the camera to the specified position (moves the camera instantly, not smoothly)
+## Parameters
+> Listed in the order that the parameters are required in
+
+| Name : Type | Description |
+|:------------|:-----------:|
+| position : [CFrame](https://create.roblox.com/docs/en-us/reference/engine/datatypes/CFrame) | The position that the camera will move to |
+</details>
+
+<a name="addSprite"></a><details><summary>addSprite : function</summary>
+
+## Description
+A function that returns a new ImageLabel that acts as an overlay for the screen<br>
+(By default, the image will be set to not visible so please remember to set it to visible)
+## Parameters
+> Listed in the order that the parameters are required in
+
+| Name : Type | Description |
+|:------------|:-----------:|
+| name : string | The name that the new sprite will be named |
+| image : string | The `robloxassetid` of the image in string form |
+| parent : [Instance](https://create.roblox.com/docs/en-us/reference/engine/classes/Instance) | The instance that the new sprite will be parented under |
+</details>
+
+<a name="addAnimatedSprite"></a><details><summary>addAnimatedSprite : function</summary>
+
+## Description
+A function that returns a Sprite that auto calibrates its size based on 2 given inputs.<br>To explain, the ImageLabel you provide must have 2 attributes.<br>(SpriteSize) must be a Vector2 value and set the two values to the width and height of the frame (or the frameSize)<br>(SpriteSheetSize) must be a Vector 2 value that is set to the size of the entire spritesheet's image<br><br>With that, the function is able to produce the accurate size needed for the sprite to fit in its frame.<br>(When scaling your image label, make sure the size is changed before turning it into a animated sprite)<br>(Also when changing the scale only use the Scale and not the offset)
+## Parameters
+> Listed in the order that the parameters are required in
+
+| Name : Type | Description |
+|:------------|:-----------:|
+| image : [ImageLabel](https://create.roblox.com/docs/en-us/reference/engine/classes/ImageLabel) | The `ImageLabel` that the new sprite will become |
+| visible : boolean | Whether or not the new sprite will be visible as soon as it is created |
+| parent : [Instance](https://create.roblox.com/docs/en-us/reference/engine/classes/Instance) | The parent `Instance` that the new sprite will be parented under |
+</details>
+
 </details>
 
 ---
@@ -106,7 +176,7 @@ A list of game settings that change various behaviors
 <details>
 <summary><h2>Returned Modchart Functions</h2></summary>
 
-#### Return Functions are vital for modcharts to work and are called at specific times.
+> Returned Functions are vital for modcharts to work and are called at specific times and conditions
 	
 - preInit = function(gameUI : [ScreenGui](https://create.roblox.com/docs/en-us/reference/engine/classes/ScreenGui), module : table)
 	
@@ -132,13 +202,13 @@ Runs when the countdown starts
 Runs when the song starts
 ```
 	
-- P1NoteHit = function(noteType : string, noteData : integer, note : [Note](Classes/Note.md))
+- P1NoteHit = function(noteType : string, noteData : number, note : [Note](Classes/Note.md))
 	
 ```
 Runs when the player hits a note
 ```
 	
-- P2NoteHit = function(noteType : string, noteData : integer)
+- P2NoteHit = function(noteType : string, noteData : number)
 	
 ```
 Runs when the opponent hits a note, this includes other players
@@ -150,13 +220,13 @@ Runs when the opponent hits a note, this includes other players
 Runs whenever a frame is rendered
 ```
 	
-- StepHit = function(curStep : integer)
+- StepHit = function(curStep : number)
 	
 ```
 Runs when a step is hit
 ```
 	
-- BeatHit = function(curBeat : integer)
+- BeatHit = function(curBeat : number)
 	
 ```
 Runs when a beat is hit
@@ -182,7 +252,8 @@ Runs when an event is played, even when an event is called from a modchart.
 <summary><h2>Examples</h2></summary>
 <br>
 
-Example showcasing how to run and handle events
+> Example showcasing how to run and handle events
+
 ```lua
 --!nolint UnknownGlobal
 --!nolint UninitializedLocal
