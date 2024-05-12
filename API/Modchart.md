@@ -46,7 +46,7 @@
 |-------------|-------------|
 | [HideNotes](#HideNotes) : function | A function that simplifies the process of hiding notes/receptors |
 | [MoveCamera](#MoveCamera) : function | A function that simplifies the process of getting the camera from point A to point B, instantly |
-| [addSprite](#addSprite) : function) | A function that is used to make a new image that overlays the screen<br>(by default, the image’s visible property will be set to `false`) |
+| [addSprite](#addSprite) : function | A function that is used to make a new image that overlays the screen<br>(by default, the image’s visible property will be set to `false`) |
 | [addAnimatedSprite](#addAnimatedSprite) : function | A function that returns a Sprite that auto calibrates its size |
 </details>
 	
