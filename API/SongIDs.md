@@ -58,6 +58,7 @@ return {
 	ClockTime = 6.5; -- (Optional) Sets the time of day
 	hideProps = false; -- (Optional) Tells whether or not to hide props in the map
 	hideBox = false; -- (Optional) Hides all boomboxes
+	PlaybackSpeed = 1; -- (Optional) Value changes the default speed of the song, this is used for slowing down sped up songs that are too long for Roblox
 	PreloadSounds = { -- (Optional) Plays the sound at a very low volume so that the game forces it to load
 		"rbxassetid://" -- sound id
 	};
@@ -106,6 +107,7 @@ return {
 | ClockTime : number | Applies a custom time-of-day for the specific song<br>default: 6.5 |
 | hideProps : boolean | Whether or not to hide the props for the map |
 | hideBox : boolean | Whether or not to hide the boombox |
+| PlaybackSpeed : number | Determines the default playback speed of the instrumental and voices (used with songs that are over 7 minutes, which is Roblox's song limit) |
 | PreloadSounds : string[] | A list of `robloxassetid`s that will be preloaded so that the sounds will play instantly rather than waiting to be loaded first |
 | PreloadImages : string[] | A list of `robloxassetid`s that will be preloaded so that the images will show up instantly rather than having to load while the song is playing |
 | countdownImages : number[] | A list of asset ids that are used to change the images that appear for “3”, “2”, “1”, “GO” that appear at the beginning of a song |
