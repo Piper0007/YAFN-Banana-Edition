@@ -110,7 +110,7 @@ A function that is used to hide the notes and or receptors for either the player
 
 | Name : Type | Description |
 |:------------|:-----------:|
-| hideNotes : boolean | Whether or not to hide the notes (if false then it will unhide the notes, making them reappear) |
+| HideNotes : boolean | Whether or not to hide the notes (if false then it will unhide the notes, making them reappear) |
 | side : string | Determines which side will be affected.<br><br>Options are "left", "right", or "both" |
 | hideReceptors : boolean | Whether or not to hide the receptors as well |
 | speed : number | Determines how fast the transition will last for (how fast the tween plays) |
